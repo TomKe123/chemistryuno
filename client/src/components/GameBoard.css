@@ -74,6 +74,27 @@
   text-align: center;
 }
 
+.stat-value.warning {
+  background: #fbbf24;
+  color: #78350f;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.pending-draws {
+  border: 2px solid #fbbf24;
+  border-radius: 8px;
+  padding: 5px;
+}
+
 .stat-value.current {
   background: rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
@@ -205,6 +226,34 @@
   color: #1e40af;
 }
 
+.last-played {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.played-card-display {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.played-card-label,
+.played-compound-label {
+  font-size: 0.95em;
+  color: #374151;
+  text-align: center;
+}
+
+.played-card-label strong,
+.played-compound-label strong {
+  color: #3b82f6;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
 .last-compound {
   display: flex;
   justify-content: center;
@@ -262,6 +311,17 @@
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
+.player-info.offline {
+  opacity: 0.6;
+  background: #f3f4f6;
+  border-left-color: #ef4444;
+}
+
+.player-info.offline .hand-count {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .player-label {
   font-weight: 600;
   color: #1f2937;
@@ -269,6 +329,12 @@
 
 .player-label.active {
   color: #3b82f6;
+}
+
+.offline-text {
+  font-size: 0.85em;
+  color: #ef4444;
+  font-weight: 500;
 }
 
 .hand-count {

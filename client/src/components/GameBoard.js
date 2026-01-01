@@ -7,7 +7,6 @@ import './GameBoard.css';
 const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpectator }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [compounds, setCompounds] = useState([]);
-  const [selectedCompound, setSelectedCompound] = useState(null);
   const [showCompoundSelector, setShowCompoundSelector] = useState(false);
   const [gameStartTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -57,9 +56,12 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
   const handleCardClick = async (card) => {
     if (!isCurrentPlayer) return;
 
+    console.log('🎴 点击卡牌:', card);
+
     // 检查是否是特殊卡牌（+2, +4, Au, He, Ne, Ar, Kr）
     const specialCards = ['+2', '+4', 'Au', 'He', 'Ne', 'Ar', 'Kr'];
     if (specialCards.includes(card)) {
+      console.log('⚡ 特殊卡牌，直接打出');
       // 特殊卡牌直接打出，不需要选择物质
       if (socket) {
         socket.emit('playCard', {
@@ -76,16 +78,18 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
     setSelectedCard(card);
 
     try {
+      console.log('📡 请求化合物列表...');
       const response = await axios.post('http://localhost:5000/api/compounds', {
         elements: [card]
       });
 
       // 包含元素本身（单质）和可组成的化合物
       const availableOptions = [card, ...response.data.compounds];
+      console.log('✅ 可选物质:', availableOptions);
       setCompounds(availableOptions);
       setShowCompoundSelector(true);
     } catch (error) {
-      console.error('获取物质列表失败:', error);
+      console.error('❌ 获取物质列表失败:', error);
       // 即使失败，也允许打出元素本身
       setCompounds([card]);
       setShowCompoundSelector(true);
@@ -94,9 +98,10 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
 
   // 玩家选择物质后
   const handleCompoundSelect = (compound) => {
-    setSelectedCompound(compound);
+    console.log('🎯 选择物质:', compound, '使用卡牌:', selectedCard);
     
     if (socket) {
+      console.log('📤 发送playCard事件:', { roomCode, playerId, card: selectedCard, compound });
       socket.emit('playCard', {
         roomCode,
         playerId,
@@ -104,6 +109,8 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
         compound,
         playerName
       });
+    } else {
+      console.error('❌ socket未连接');
     }
 
     setShowCompoundSelector(false);
@@ -164,6 +171,12 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
               <span className="stat-label">剩余卡牌</span>
               <span className="stat-value">{gameState.deckCount}</span>
             </div>
+            {gameState.pendingDraws > 0 && (
+              <div className="stat pending-draws">
+                <span className="stat-label">累加抽牌</span>
+                <span className="stat-value warning">+{gameState.pendingDraws}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -185,10 +198,15 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
         {/* 游戏中央区域 */}
         <div className="center-area">
           <div className="pile-area">
-            <div className="pile-label">最后打出物质</div>
-            <div className="last-compound">
-              {gameState.lastCompound ? (
-                <div className="compound-card">{gameState.lastCompound}</div>
+            <div className="pile-label">最后打出的牌</div>
+            <div className="last-played">
+              {gameState.lastCard ? (
+                <div className="played-card-display">
+                  <div className="played-card-label">卡牌: <strong>{gameState.lastCard}</strong></div>
+                  {gameState.lastCompound && (
+                    <div className="played-compound-label">物质: <strong>{gameState.lastCompound}</strong></div>
+                  )}
+                </div>
               ) : (
                 <div className="compound-card empty">游戏开始</div>
               )}
@@ -199,8 +217,11 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
           <div className="other-players">
             {gameState.players.map((player, idx) => (
               idx !== playerId && (
-                <div key={idx} className={`player-info ${idx === gameState.currentPlayer ? 'active' : ''}`}>
-                  <span className="player-label">{player.name || `玩家${idx + 1}`}</span>
+                <div key={idx} className={`player-info ${idx === gameState.currentPlayer && !player.isOffline ? 'active' : ''} ${player.isOffline ? 'offline' : ''}`}>
+                  <span className="player-label">
+                    {player.isOffline ? '⚠️ ' : ''}{player.name || `玩家${idx + 1}`}
+                    {player.isOffline && <span className="offline-text"> (离线中)</span>}
+                  </span>
                   <span className="hand-count">{player.handCount}张</span>
                 </div>
               )

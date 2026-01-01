@@ -16,6 +16,7 @@ const App = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [error, setError] = useState('');
   const [isSpectator, setIsSpectator] = useState(false);
+  const [gameWinner, setGameWinner] = useState(null);
 
   // 保存昵称到 sessionStorage
   useEffect(() => {
@@ -51,22 +52,31 @@ const App = () => {
     newSocket.on('gameOver', (data) => {
       if (data.reason === 'notEnoughPlayers') {
         alert(data.message);
+        setGameStarted(false);
+        setGameState(null);
+        setRoomCode(null);
       } else {
-        alert(`游戏结束！${data.playerName}获胜！`);
+        // 显示胜利结算页面
+        setGameWinner({
+          playerName: data.playerName,
+          playerId: data.winner,
+          finalScore: data.finalScore,
+          gameTime: data.gameTime || 0
+        });
       }
-      setGameStarted(false);
-      setGameState(null);
-      setRoomCode(null);
     });
 
     newSocket.on('roomClosed', (data) => {
-      alert(data.message);
-      // 重置所有状态，返回大厅
-      setGameStarted(false);
-      setGameState(null);
-      setRoomCode(null);
-      setPlayerId(null);
-      setIsSpectator(false);
+      alert(data.message + ' - 3秒后返回大厅');
+      // 3秒后重置所有状态，返回大厅
+      setTimeout(() => {
+        setGameStarted(false);
+        setGameState(null);
+        setRoomCode(null);
+        setPlayerId(null);
+        setIsSpectator(false);
+        setGameWinner(null);
+      }, 3000);
     });
 
     newSocket.on('playerLeft', (data) => {
@@ -107,7 +117,41 @@ const App = () => {
     <div className="app">
       {error && <div className="error-message">{error}</div>}
 
-      {!gameStarted ? (
+      {gameWinner ? (
+        <div className="game-over-screen">
+          <div className="winner-card">
+            <h1 className="winner-title">🏆 游戏结束</h1>
+            <div className="winner-info">
+              <p className="winner-name">{gameWinner.playerName} 获胜！</p>
+              <div className="winner-stats">
+                <div className="stat-item">
+                  <span className="stat-label">用时</span>
+                  <span className="stat-value">{formatTime(gameWinner.gameTime)}</span>
+                </div>
+                {gameWinner.finalScore !== undefined && (
+                  <div className="stat-item">
+                    <span className="stat-label">最终得分</span>
+                    <span className="stat-value">{gameWinner.finalScore}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <button 
+              className="back-to-lobby-btn"
+              onClick={() => {
+                setGameWinner(null);
+                setGameStarted(false);
+                setGameState(null);
+                setRoomCode(null);
+                setPlayerId(null);
+                setIsSpectator(false);
+              }}
+            >
+              返回大厅
+            </button>
+          </div>
+        </div>
+      ) : !gameStarted ? (
         <GameLobby
           onGameReady={handleGameReady}
           playerName={playerName}
@@ -125,6 +169,14 @@ const App = () => {
       )}
     </div>
   );
+};
+
+// 格式化时间函数
+const formatTime = (seconds) => {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
 export default App;

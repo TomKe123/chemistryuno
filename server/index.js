@@ -217,6 +217,8 @@ app.post('/api/game/create', (req, res) => {
     lastCompound: null,
     gameStarted: false,
     gameActive: false,
+    history: [],  // 游戏历史记录
+    pendingDraws: 0,  // 累加的抽牌数
     createdAt: new Date().toISOString()
   };
   
@@ -253,8 +255,11 @@ app.post('/api/game/join', (req, res) => {
     return res.status(400).json({ error: '该昵称已被使用' });
   }
   
-  // 如果游戏已开始或明确选择观战，则作为观战者加入
-  if (gameState.gameStarted || asSpectator) {
+  // 检查房间是否还有位置
+  const hasSpaceForPlayer = gameState.players.length < gameState.maxPlayers;
+  
+  // 如果明确选择观战或房间已满，则作为观战者加入
+  if (asSpectator || !hasSpaceForPlayer) {
     if (!gameState.spectators) {
       gameState.spectators = [];
     }
@@ -276,10 +281,6 @@ app.post('/api/game/join', (req, res) => {
   }
   
   // 作为玩家加入
-  if (gameState.players.length >= gameState.maxPlayers) {
-    return res.status(400).json({ error: '房间已满，只能以观战者身份加入' });
-  }
-  
   const playerId = gameState.players.length;
   gameState.players.push({
     id: playerId,
@@ -373,6 +374,7 @@ app.post('/api/game/:roomCode/start', (req, res) => {
   gameState.gameStarted = true;
   gameState.gameActive = true;
   gameState.currentPlayer = 0;
+  gameState.lastCard = null;  // 初始化最后打出的卡牌
   
   res.json({
     success: true,
@@ -557,12 +559,15 @@ io.on('connection', (socket) => {
     playerSockets.set(playerName, socket.id);
     
     // 记录socket与玩家的关联
-    const player = gameState.players.find(p => p.id === playerId);
+    const player = playerId !== null ? gameState.players.find(p => p.id === playerId) : null;
+    const isSpectator = playerId === null;
+    
     socketToPlayer.set(socket.id, {
       roomCode: roomCode,
       playerId: playerId,
       playerName: playerName,
-      isHost: player ? player.isHost : false
+      isHost: player ? player.isHost : false,
+      isSpectator: isSpectator
     });
     
     // 如果是房主重新连接，取消房间关闭的超时
@@ -586,13 +591,18 @@ io.on('connection', (socket) => {
         // 标记为在线
         player.isOffline = false;
       }
+    } else if (isSpectator) {
+      // 观战者加入
+      console.log(`📺 观战者 ${playerName} 已加入房间 ${roomCode}`);
     }
     
-    // 向所有玩家广播玩家加入
+    // 向所有玩家广播玩家/观战者加入
     io.to(roomCode).emit('playerJoined', {
       playerId: playerId,
       playerName: playerName,
-      playerCount: gameState.players.length
+      isSpectator: isSpectator,
+      playerCount: gameState.players.length,
+      spectatorCount: gameState.spectators ? gameState.spectators.length : 0
     });
     
     // 向所有玩家广播当前游戏状态
@@ -649,7 +659,10 @@ io.on('connection', (socket) => {
     const { roomCode, playerId, card, compound } = data;
     const gameState = gameSessions.get(roomCode);
     
+    console.log(`🎮 playCard事件 - 房间:${roomCode}, 玩家:${playerId}, 卡牌:${card}, 物质:${compound}`);
+    
     if (!gameState || gameState.currentPlayer !== playerId) {
+      console.log(`❌ 不是玩家${playerId}的回合，当前回合:${gameState?.currentPlayer}`);
       socket.emit('error', '不是你的回合');
       return;
     }
@@ -658,6 +671,7 @@ io.on('connection', (socket) => {
     
     // 检查卡牌是否在手中
     if (!player.hand.includes(card)) {
+      console.log(`❌ 玩家${playerId}没有卡牌${card}，手牌:${player.hand.join(',')}`);
       socket.emit('error', '你没有这张卡牌');
       return;
     }
@@ -671,12 +685,17 @@ io.on('connection', (socket) => {
       const elements = ['H', 'O', 'C', 'N', 'F', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Zn', 'Br', 'I', 'Ag'];
       const isElement = elements.includes(compound);
       
+      console.log(`🔍 检查物质 - compound:${compound}, isElement:${isElement}, lastCompound:${gameState.lastCompound}`);
+      
       // 单质可以随时打出，化合物需要检查反应
       if (!isElement && !database.canPlayCompound(compound, gameState.lastCompound)) {
+        console.log(`❌ 物质${compound}无法与${gameState.lastCompound}反应`);
         socket.emit('error', '这个物质无法与上一个物质反应');
         return;
       }
     }
+    
+    console.log(`✅ 验证通过，打出卡牌${card}，物质${compound}`);
     
     // 移除卡牌
     const index = player.hand.indexOf(card);
@@ -696,10 +715,14 @@ io.on('connection', (socket) => {
     
     // 检查是否胜利
     if (GameRules.isWinner(player)) {
+      // 计算游戏时长（秒）
+      const gameTime = Math.floor((new Date() - new Date(gameState.createdAt)) / 1000);
+      
       io.to(roomCode).emit('gameOver', {
         winner: playerId,
         playerName: player.name,
-        finalScore: GameRules.calculateScore(player.hand)
+        finalScore: GameRules.calculateScore(player.hand),
+        gameTime: gameTime
       });
       
       // 清理该房间所有玩家的会话映射
@@ -920,6 +943,8 @@ function sanitizeGameState(gameState, playerId) {
     currentPlayer: gameState.currentPlayer,
     direction: gameState.direction,
     lastCompound: gameState.lastCompound,
+    lastCard: gameState.lastCard,
+    pendingDraws: gameState.pendingDraws || 0,
     deckCount: gameState.deck ? gameState.deck.length : 0,
     gameActive: gameState.gameActive,
     gameStarted: gameState.gameStarted,
@@ -929,6 +954,7 @@ function sanitizeGameState(gameState, playerId) {
       id: player.id,
       name: player.name,
       isHost: player.isHost,
+      isOffline: player.isOffline || false,
       hand: player.id === playerIdNum ? player.hand : Array(player.hand.length).fill('unknown'),
       compounds: player.compounds,
       handCount: player.hand.length

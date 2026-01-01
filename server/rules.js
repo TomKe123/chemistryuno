@@ -139,20 +139,24 @@ class GameRules {
         break;
 
       case 'draw2':
-        this.addCardsToNextPlayer(gameState, 2);
+        // 累加+2
+        gameState.pendingDraws = (gameState.pendingDraws || 0) + 2;
         gameState.history.push({
           action: 'draw2',
           card: card,
-          player: gameState.currentPlayer
+          player: gameState.currentPlayer,
+          totalDraws: gameState.pendingDraws
         });
         break;
 
       case 'draw4':
-        this.addCardsToNextPlayer(gameState, 4);
+        // 累加+4
+        gameState.pendingDraws = (gameState.pendingDraws || 0) + 4;
         gameState.history.push({
           action: 'draw4',
           card: card,
-          player: gameState.currentPlayer
+          player: gameState.currentPlayer,
+          totalDraws: gameState.pendingDraws
         });
         break;
 
@@ -190,6 +194,28 @@ class GameRules {
     const playerCount = gameState.players.length;
     gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
     gameState.turnCount++;
+    
+    // 检查是否有累加的抽牌需要结算
+    if (gameState.pendingDraws > 0) {
+      const currentPlayer = gameState.players[gameState.currentPlayer];
+      
+      // 检查当前玩家是否有+2或+4卡可以继续累加
+      const hasDrawCard = currentPlayer.hand.some(card => card === '+2' || card === '+4');
+      
+      // 如果没有加牌卡，则结算累加的抽牌
+      if (!hasDrawCard) {
+        console.log(`玩家${gameState.currentPlayer}无法继续累加，抽${gameState.pendingDraws}张牌`);
+        for (let i = 0; i < gameState.pendingDraws; i++) {
+          if (gameState.deck.length > 0) {
+            currentPlayer.hand.push(gameState.deck.pop());
+          }
+        }
+        gameState.pendingDraws = 0;
+        
+        // 抽牌后跳过该玩家
+        gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
+      }
+    }
   }
 
   /**
