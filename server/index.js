@@ -124,6 +124,20 @@ io.on('connection', (socket) => {
     const gameState = gameSessions.get(gameId);
     
     if (!gameState || gameState.currentPlayer !== playerId) {
+      socket.emit('error', '不是你的回合');
+      return;
+    }
+    
+    const player = gameState.players[playerId];
+    
+    // 检查卡牌是否在手中
+    if (!player.hand.includes(card)) {
+      socket.emit('error', '你没有这张卡牌');
+      return;
+    }
+    
+    // 如果打出的是物质，检查是否能反应
+    if (compound) {
       if (!database.canPlayCompound(compound, gameState.lastCompound)) {
         socket.emit('error', '这个物质无法与上一个物质反应');
         return;
@@ -163,21 +177,7 @@ io.on('connection', (socket) => {
     // 广播游戏状态更新
     io.to(gameId).emit('gameStateUpdate', {
       gameState: sanitizeGameState(gameState, null),
-      lastPlay: { playerId, card, compound, playerName: data.playerName
-        winner: playerId,
-        playerName: data.playerName
-      });
-      gameSessions.delete(gameId);
-      return;
-    }
-    
-    // 移到下一个玩家
-    gameLogic.nextPlayer(gameState);
-    
-    // 广播游戏状态更新
-    io.to(gameId).emit('gameStateUpdate', {
-      gameState: sanitizeGameState(gameState, null),
-      lastPlay: { playerId, card, compound }
+      lastPlay: { playerId, card, compound, playerName: data.playerName }
     });
   });
   
@@ -206,8 +206,7 @@ io.on('connection', (socket) => {
     // 广播游戏状态更新
     io.to(gameId).emit('gameStateUpdate', {
       gameState: sanitizeGameState(gameState, null),
-      lastPlay: { playerId, action: 'draw', playerName: data.playerNamete, null),
-      lastPlay: { playerId, action: 'draw' }
+      lastPlay: { playerId, action: 'draw', playerName: data.playerName }
     });
   });
   

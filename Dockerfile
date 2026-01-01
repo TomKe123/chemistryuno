@@ -1,0 +1,28 @@
+# 使用 Node.js 官方镜像作为基础
+FROM node:18-alpine
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置环境变量
+ENV NODE_ENV=production
+
+# 复制项目文件
+COPY . .
+
+# 安装后端依赖
+WORKDIR /app/server
+RUN npm install --production
+
+# 安装前端依赖
+WORKDIR /app/client
+RUN npm install --production && npm run build
+
+# 回到根目录
+WORKDIR /app
+
+# 暴露端口
+EXPOSE 5000 3000
+
+# 启动脚本
+CMD ["sh", "-c", "cd server && npm start & cd ../client && npm start && wait"]

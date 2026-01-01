@@ -119,79 +119,31 @@ added 1500+ packages in 2-3 minutes
 
 ## 🚀 启动应用
 
-### 方式1：自动脚本（推荐）
+> 📖 详细的启动指南请查看 [GETTING_STARTED.md](GETTING_STARTED.md)
 
-**Windows**: 双击 `start-game.bat`
-```batch
-@echo off
-start "Chemistry-UNO Server" cmd /k "cd server && npm install && npm start"
-timeout /t 3 /nobreak
-start "Chemistry-UNO Client" cmd /k "cd client && npm install && npm start"
-```
+### 方式1：npm 一键启动（推荐）⭐
 
-**Linux/macOS**: 运行 `bash start-game.sh`
 ```bash
-#!/bin/bash
-cd server && npm install && npm start &
-sleep 3
-cd ../client && npm install && npm start &
+# 项目根目录
+npm install    # 首次需要安装依赖
+npm start      # 启动前后端
 ```
 
-### 方式2：手动启动
+应用将自动启动：
+- **后端**: http://localhost:5000
+- **前端**: http://localhost:3000
 
-**打开两个终端**
+### 方式2：Docker 容器化启动
 
-**终端1 - 后端服务**
 ```bash
-cd server
-npm start
+docker-compose up
 ```
 
-输出：
-```
-服务器运行在端口 5000
-服务器已启动，监听在 http://localhost:5000
-```
-
-**终端2 - 前端应用**
-```bash
-cd client
-npm start
-```
-
-输出：
-```
-Compiled successfully!
-You can now view client in the browser.
-  http://localhost:3000
-```
-
-浏览器自动打开 http://localhost:3000
+应用地址：http://localhost:3000
 
 ---
 
 ## 📝 npm 常用命令
-
-### 后端命令
-
-```bash
-cd server
-
-# 安装依赖
-npm install
-
-# 启动服务器
-npm start
-
-# 开发模式（自动重启）
-npm run dev
-
-# 查看已安装包
-npm list
-
-# 更新包
-npm update
-```
 
 ### 前端命令
 
@@ -386,13 +338,15 @@ npm bugs react
 
 安装完成后：
 
-1. ✅ 启动应用: 运行 `start-game.bat` 或手动启动
+1. ✅ 启动应用: 查看 [GETTING_STARTED.md](GETTING_STARTED.md) 获取启动指南
 2. ✅ 打开浏览器: http://localhost:3000
 3. ✅ 开始游戏: 创建游戏或加入现有游戏
 4. ✅ 阅读文档: 查看 README.md 了解游戏规则
 
 ---
 
-**安装遇到问题？** 查看项目根目录的 QUICK_START.md 或 DEVELOPER_GUIDE.md
+**需要启动应用？** 查看 [GETTING_STARTED.md](GETTING_STARTED.md)
 
-*最后更新: 2024年*
+**需要技术细节？** 查看 [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+
+*最后更新: 2026年*

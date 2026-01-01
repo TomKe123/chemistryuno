@@ -2,28 +2,34 @@
 
 ## 🚀 一键启动
 
-### Windows
-```batch
-cd d:\SystemFolders\Desktop\chemistryuno
-start-game.bat
-```
+### 方案一：npm 启动（推荐）⭐
 
-### Linux/macOS
 ```bash
-cd ~/Desktop/chemistryuno
-bash start-game.sh
+# 项目根目录
+npm install     # 首次运行需要安装依赖
+npm start       # 一键启动前后端
 ```
 
-### 手动启动
+浏览器自动打开：http://localhost:3000
+
+### 方案二：Docker 启动
+
 ```bash
-# 终端1 - 后端 (端口 5000)
-cd server && npm install && npm start
-
-# 终端2 - 前端 (端口 3000)
-cd client && npm install && npm start
+docker-compose up
 ```
 
-浏览器: http://localhost:3000
+应用地址：http://localhost:3000
+
+### 其他 npm 命令
+
+```bash
+npm run server    # 仅启动后端 (端口 5000)
+npm run client    # 仅启动前端 (端口 3000)
+npm run dev       # 开发模式 (支持热重载)
+npm run clean     # 清理依赖
+npm run update    # 更新依赖
+npm run audit     # 检查安全问题
+```
 
 ---
 

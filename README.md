@@ -2,6 +2,8 @@
 
 一个基于化学知识的创意卡牌游戏网络应用。玩家需要打出能与上一个物质发生化学反应的物质来继续游戏。
 
+> 📖 **快速开始？** 查看 [GETTING_STARTED.md](GETTING_STARTED.md) 了解如何启动应用
+
 ## 📋 项目概述
 
 **化学UNO** 是一款将化学知识和UNO卡牌游戏完美结合的Web应用。系统内置了化学反应数据库，能够实时检验两个物质是否能发生反应，为玩家提供智能的卡牌推荐。
@@ -63,49 +65,54 @@ chemistryuno/
 
 ### 前置要求
 - Node.js >= 14.0
-- npm 或 yarn
+- npm >= 6.0
 
-### 安装依赖
+### 方案一：npm 一键启动（推荐）⭐
 
-#### 1. 安装后端依赖
+#### 1. 安装依赖
 ```bash
-cd server
 npm install
 ```
 
-#### 2. 安装前端依赖
+#### 2. 启动应用
 ```bash
-cd ../client
-npm install
-```
-
-### 启动应用
-
-#### 方案一：分别启动（推荐开发模式）
-
-**终端1 - 启动后端服务器**
-```bash
-cd server
-npm start
-# 或开发模式（支持自动重载）：npm run dev
-```
-服务器将在 `http://localhost:5000` 运行
-
-**终端2 - 启动前端应用**
-```bash
-cd client
 npm start
 ```
-浏览器将自动打开 `http://localhost:3000`
 
-#### 方案二：使用脚本启动（仅限Windows）
+这将自动启动后端服务器和前端应用：
+- 后端：`http://localhost:5000`
+- 前端：`http://localhost:3000`
 
-在项目根目录运行：
+#### 其他 npm 命令
 ```bash
-start-game.bat
+npm run server    # 仅启动后端
+npm run client    # 仅启动前端
+npm run dev       # 开发模式（支持热重载）
+npm run install-all  # 安装所有依赖
+npm run clean     # 清理依赖
+npm run update    # 更新依赖
+npm run audit     # 检查安全漏洞
 ```
 
-此脚本将在两个独立的PowerShell窗口中同时启动前后端。
+### 方案二：Docker 容器化启动
+
+#### 前置要求
+- Docker >= 20.0
+- Docker Compose >= 1.29
+
+#### 启动应用
+```bash
+docker-compose up
+```
+
+应用将在以下地址可访问：
+- 前端：`http://localhost:3000`
+- 后端：`http://localhost:5000`
+
+#### 停止应用
+```bash
+docker-compose down
+```
 
 ### 游戏入门
 1. 打开浏览器访问 `http://localhost:3000`

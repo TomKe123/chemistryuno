@@ -14,9 +14,10 @@ chemistryuno/
 │   ├── 📄 DEVELOPER_GUIDE.md      开发者指南（API、架构）
 │   └── 📄 PROJECT_SUMMARY.md      项目总结报告
 │
-├── 🚀 启动脚本
-│   ├── 📄 start-game.bat          Windows自动启动脚本
-│   └── 📄 start-game.sh           Linux/macOS启动脚本
+├── � Docker容器化
+│   ├── 📄 Dockerfile              Docker镜像定义
+│   ├── 📄 docker-compose.yml      多容器编排
+│   └── 📄 .dockerignore           Docker构建忽略文件
 │
 ├── 🔌 后端 (server/)
 │   ├── 📄 package.json            后端依赖配置

@@ -1,0 +1,38 @@
+{
+  "name": "chemistry-uno",
+  "version": "1.0.0",
+  "description": "一个将化学知识融入的创意卡牌游戏",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "clean": "rm -rf server/node_modules client/node_modules server/package-lock.json client/package-lock.json",
+    "update": "cd server && npm update && cd ../client && npm update",
+    "audit": "cd server && npm audit && cd ../client && npm audit",
+    "audit-fix": "cd server && npm audit fix && cd ../client && npm audit fix"
+  },
+  "keywords": [
+    "chemistry",
+    "game",
+    "uno",
+    "card",
+    "react",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
