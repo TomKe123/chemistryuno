@@ -175,9 +175,9 @@ npm install
 
 ## 📚 更多文档
 
-- [完整说明书](README.md) - 详细的项目说明和游戏规则
-- [开发者指南](DEVELOPER_GUIDE.md) - 技术架构和 API 文档
-- [安装指南](INSTALLATION_GUIDE.md) - 详细的安装步骤
+- [完整说明书](../README.md) - 详细的项目说明和游戏规则
+- [开发者指南](./DEVELOPER_GUIDE.md) - 技术架构和 API 文档
+- [安装指南](./INSTALLATION_GUIDE.md) - 详细的安装步骤
 
 ---
 

@@ -8,18 +8,22 @@ D:\SystemFolders\Desktop\chemistryuno/
 ├── 📊 数据库
 │   └── db.json                              # 化学知识库 (150+物质、40+反应)
 │
-├── 📚 完整文档 (6份)
-│   ├── README.md                           # 项目说明书 (用户指南) 
+├── 📚 完整文档 (10份)
+│   ├── README.md                           # 项目说明书 (用户指南)
+│   ├── GETTING_STARTED.md                  # ⭐ 启动应用指南 (首先阅读)
 │   ├── QUICK_START.md                      # 快速开始手册
 │   ├── INSTALLATION_GUIDE.md               # 详细安装指南
 │   ├── DEVELOPER_GUIDE.md                  # API & 架构文档
 │   ├── PROJECT_SUMMARY.md                  # 项目总结报告
 │   ├── FILE_MANIFEST.md                    # 文件清单
-│   └── COMPLETION_REPORT.md                # 完成报告
+│   ├── COMPLETION_REPORT.md                # 完成报告
+│   ├── CLEANUP_SUMMARY.md                  # 项目简化总结
+│   └── INDEX.md                            # 本文件 (项目索引)
 │
-├── 🚀 启动脚本 (2个)
-│   ├── start-game.bat                      # Windows 自动启动
-│   └── start-game.sh                       # Linux/macOS 启动
+├── 🐳 Docker 容器化
+│   ├── Dockerfile                          # Docker 镜像配置
+│   ├── docker-compose.yml                  # 多容器编排配置
+│   └── .dockerignore                       # Docker 构建忽略
 │
 ├── 🔌 后端服务器 (server/)
 │   ├── package.json                        # 依赖配置
@@ -49,6 +53,12 @@ D:\SystemFolders\Desktop\chemistryuno/
 │   │       └── CompoundSelector.css        # 选择器样式
 │   └── node_modules/                       # (npm安装后)
 │
+├── 🔧 项目根配置
+│   ├── package.json                        # 主配置 (npm脚本)
+│   ├── .gitignore                          # Git 忽略
+│   └── .git/                               # Git 仓库
+```
+│
 └── 🔧 配置文件
     └── .gitignore                          # Git忽略配置
 ```
@@ -67,30 +77,53 @@ D:\SystemFolders\Desktop\chemistryuno/
 **Linux/macOS**:
 ```bash
 bash start-game.sh
-```
+## 🚀 快速启动
 
-**手动方式**:
+> 📖 **详细启动指南，请查看 [GETTING_STARTED.md](GETTING_STARTED.md)**
+
+### 推荐方式 1️⃣：npm 一键启动 ⭐
+
 ```bash
-# 终端1 - 启动后端
-cd server && npm install && npm start
-
-# 终端2 - 启动前端  
-cd client && npm install && npm start
+# 项目根目录
+npm install     # 首次运行安装依赖
+npm start       # 启动前后端
 ```
 
-### 步骤2️⃣: 打开浏览器
-```
-http://localhost:3000
+应用地址: http://localhost:3000
+
+### 推荐方式 2️⃣：Docker 容器化启动
+
+```bash
+docker-compose up
 ```
 
-### 步骤3️⃣: 开始游戏
+应用地址: http://localhost:3000
+
+### 其他 npm 命令
+
+```bash
+npm run server     # 仅启动后端
+npm run client     # 仅启动前端
+npm run dev        # 开发模式（热重载）
+npm run install-all # 重新安装所有依赖
+npm run clean      # 清理依赖
+npm run update     # 更新依赖
+npm run audit      # 检查安全问题
 ```
-1. 输入玩家名称
-2. 创建游戏或加入游戏
-3. 选择玩家数量
-4. 点击创建/加入
-5. 开始出牌！
-```
+
+---
+
+## 📚 文档导航
+
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| **[GETTING_STARTED.md](GETTING_STARTED.md)** | 启动应用指南 | 👈 **首先阅读** |
+| [README.md](README.md) | 项目说明和游戏规则 | 了解游戏玩法 |
+| [QUICK_START.md](QUICK_START.md) | 快速参考 | 需要快速查阅 |
+| [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) | 依赖安装细节 | 安装出现问题时 |
+| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | 技术架构和 API | 进行开发时 |
+| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | 项目总结报告 | 了解技术栈 |
+| [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) | 项目简化总结 | 了解最近变更 |
 
 ---
 

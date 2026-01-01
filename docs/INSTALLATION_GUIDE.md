@@ -119,7 +119,7 @@ added 1500+ packages in 2-3 minutes
 
 ## 🚀 启动应用
 
-> 📖 详细的启动指南请查看 [GETTING_STARTED.md](GETTING_STARTED.md)
+> 📖 详细的启动指南请查看 [GETTING_STARTED.md](./GETTING_STARTED.md)
 
 ### 方式1：npm 一键启动（推荐）⭐
 
@@ -338,15 +338,15 @@ npm bugs react
 
 安装完成后：
 
-1. ✅ 启动应用: 查看 [GETTING_STARTED.md](GETTING_STARTED.md) 获取启动指南
+1. ✅ 启动应用: 查看 [GETTING_STARTED.md](./GETTING_STARTED.md) 获取启动指南
 2. ✅ 打开浏览器: http://localhost:3000
 3. ✅ 开始游戏: 创建游戏或加入现有游戏
-4. ✅ 阅读文档: 查看 README.md 了解游戏规则
+4. ✅ 阅读文档: 查看 [README.md](../README.md) 了解游戏规则
 
 ---
 
-**需要启动应用？** 查看 [GETTING_STARTED.md](GETTING_STARTED.md)
+**需要启动应用？** 查看 [GETTING_STARTED.md](./GETTING_STARTED.md)
 
-**需要技术细节？** 查看 [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+**需要技术细节？** 查看 [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
 
 *最后更新: 2026年*

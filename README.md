@@ -2,7 +2,16 @@
 
 一个基于化学知识的创意卡牌游戏网络应用。玩家需要打出能与上一个物质发生化学反应的物质来继续游戏。
 
-> 📖 **快速开始？** 查看 [GETTING_STARTED.md](GETTING_STARTED.md) 了解如何启动应用
+## 📚 快速导航
+
+| 🎯 需求 | 📖 查看文档 |
+|--------|-----------|
+| 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
+| 🎮 **游戏规则？** | 👇 下方详见 |
+| 👨‍💻 **要开发？** | [开发者指南](docs/DEVELOPER_GUIDE.md) |
+| 📋 **项目概览？** | [项目总结](docs/PROJECT_SUMMARY.md) |
+| 🔧 **安装依赖？** | [安装指南](docs/INSTALLATION_GUIDE.md) |
+| ⚡ **快速查询？** | [快速参考](docs/QUICK_REFERENCE.md) |
 
 ## 📋 项目概述
 
@@ -223,6 +232,25 @@ docker-compose down
 - 不考虑化学计量系数
 - 物质库为简化示例（可根据需要扩展）
 - 暂不支持离线游戏存档
+
+---
+
+## 📚 完整文档
+
+所有详细文档已整理到 **[docs/](docs/)** 目录：
+
+| 文档 | 说明 | 适用人群 |
+|------|------|--------|
+| [GETTING_STARTED.md](docs/GETTING_STARTED.md) | 启动应用完整指南 | 👥 所有用户 |
+| [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) | 快速参考卡 | ⚡ 快速查阅 |
+| [QUICK_START.md](docs/QUICK_START.md) | 游戏规则速查表 | 🎮 游戏玩家 |
+| [INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md) | 详细安装指南 | 🔧 安装问题 |
+| [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | 技术架构和API | 👨‍💻 开发者 |
+| [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) | 项目技术总结 | 📊 项目概览 |
+| [FILE_MANIFEST.md](docs/FILE_MANIFEST.md) | 完整文件清单 | 📋 文件说明 |
+| [CLEANUP_SUMMARY.md](docs/CLEANUP_SUMMARY.md) | 项目简化说明 | 📝 了解变更 |
+| [INDEX.md](docs/INDEX.md) | 项目索引 | 🔍 查找内容 |
+| [COMPLETION_REPORT.md](docs/COMPLETION_REPORT.md) | 完成报告 | ✅ 项目状态 |
 
 ## 📄 许可证
 
