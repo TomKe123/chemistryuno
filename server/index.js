@@ -1,7 +1,11 @@
+// -*- coding: utf-8 -*-
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const gameLogic = require('./gameLogic');
 const database = require('./database');
 const GameRules = require('./rules');
@@ -18,36 +22,399 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+// 根路由 - 服务器状态检查
+app.get('/', (req, res) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>化学UNO - Chemistry UNO Game Server</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .container {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          padding: 40px;
+          max-width: 800px;
+          width: 100%;
+        }
+        h1 {
+          color: #667eea;
+          margin-bottom: 10px;
+          font-size: 2.5em;
+        }
+        .subtitle {
+          color: #666;
+          margin-bottom: 30px;
+          font-size: 1.1em;
+        }
+        .status {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: #f0f9ff;
+          border-radius: 8px;
+          border-left: 4px solid #667eea;
+        }
+        .status-indicator {
+          width: 12px;
+          height: 12px;
+          background: #22c55e;
+          border-radius: 50%;
+          margin-right: 10px;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .endpoints {
+          margin-top: 30px;
+        }
+        .endpoints h2 {
+          color: #333;
+          margin-bottom: 15px;
+          font-size: 1.3em;
+        }
+        .endpoint-item {
+          background: #f5f5f5;
+          padding: 12px 15px;
+          margin-bottom: 10px;
+          border-radius: 6px;
+          border-left: 3px solid #667eea;
+          font-family: 'Courier New', monospace;
+          font-size: 0.9em;
+        }
+        .method {
+          display: inline-block;
+          background: #667eea;
+          color: white;
+          padding: 2px 8px;
+          border-radius: 4px;
+          margin-right: 10px;
+          font-weight: bold;
+          min-width: 45px;
+          text-align: center;
+        }
+        .frontend-link {
+          display: inline-block;
+          margin-top: 30px;
+          padding: 12px 24px;
+          background: #667eea;
+          color: white;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: bold;
+          transition: all 0.3s;
+        }
+        .frontend-link:hover {
+          background: #764ba2;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .info-box {
+          background: #fef3c7;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 20px;
+          border-left: 4px solid #f59e0b;
+        }
+        .info-box strong {
+          color: #d97706;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>⚗️ 化学UNO 游戏服务器</h1>
+        <p class="subtitle">Chemistry UNO Game Server v1.0.0</p>
+        
+        <div class="status">
+          <div class="status-indicator"></div>
+          <span style="font-weight: bold; color: #22c55e;">服务器运行中</span>
+        </div>
+
+        <div class="endpoints">
+          <h2>📡 可用API接口</h2>
+          <div class="endpoint-item"><span class="method">GET</span> /api/compounds</div>
+          <div class="endpoint-item"><span class="method">POST</span> /api/game/create</div>
+          <div class="endpoint-item"><span class="method">GET</span> /api/game/:gameId/:playerId</div>
+          <div class="endpoint-item"><span class="method">POST</span> /api/reaction/check</div>
+          <div class="endpoint-item"><span class="method">GET</span> /api/game/:gameId/stats</div>
+          <div class="endpoint-item"><span class="method">WS</span> WebSocket - 实时通信</div>
+        </div>
+
+        <div class="info-box">
+          <strong>⚠️ 注意：</strong> 前端应在 <a href="http://localhost:3000" style="color: #d97706; font-weight: bold;">http://localhost:3000</a> 运行。
+          如看不到游戏界面，请确保执行了 <code>npm start</code> 命令。
+        </div>
+
+        <a href="http://localhost:3000" class="frontend-link">▶️ 进入游戏</a>
+      </div>
+    </body>
+    </html>
+  `;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
 // 存储游戏会话
 const gameSessions = new Map();
 const playerSockets = new Map(); // playerName -> socketId
+const socketToPlayer = new Map(); // socketId -> {roomCode, playerId, playerName, isHost}
+const pendingCleanup = new Map(); // roomCode -> {playerIndex, timeoutId} 存储待清理的玩家和超时
+const playerToRoom = new Map(); // playerName -> {roomCode, playerId, joinTime} 玩家昵称到房间的映射
+
+// 生成6位房间号
+function generateRoomCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// 确保房间号唯一
+function generateUniqueRoomCode() {
+  let code;
+  do {
+    code = generateRoomCode();
+  } while (gameSessions.has(code));
+  return code;
+}
 
 // 路由：创建新游戏
 app.post('/api/game/create', (req, res) => {
-  const { playerCount, gameId } = req.body;
+  const { playerName } = req.body;
   
-  if (playerCount < 2 || playerCount > 4) {
-    return res.status(400).json({ error: '玩家数量必须在2-4之间' });
-  }
+  // 生成唯一房间号
+  const roomCode = generateUniqueRoomCode();
   
-  const newGameId = gameId || 'game_' + Date.now();
-  const gameState = GameRules.initializeGame(playerCount);
+  // 初始化游戏状态（最多12人）
+  const gameState = {
+    roomCode: roomCode,
+    players: [{
+      id: 0,
+      name: playerName,
+      hand: [],
+      compounds: [],
+      isHost: true
+    }],
+    spectators: [],  // 观战者列表
+    maxPlayers: 12,
+    deck: [],
+    currentPlayer: 0,
+    direction: 1,
+    lastCompound: null,
+    gameStarted: false,
+    gameActive: false,
+    createdAt: new Date().toISOString()
+  };
   
-  gameSessions.set(newGameId, gameState);
+  gameSessions.set(roomCode, gameState);
+  
+  // 记录玩家昵称到房间的映射
+  playerToRoom.set(playerName, {
+    roomCode: roomCode,
+    playerId: 0,
+    joinTime: new Date().toISOString()
+  });
   
   res.json({
-    gameId: newGameId,
-    gameState: sanitizeGameState(gameState, null)
+    roomCode: roomCode,
+    playerId: 0,
+    gameState: sanitizeGameState(gameState, 0)
   });
 });
 
-// 路由：获取游戏状态
-app.get('/api/game/:gameId/:playerId', (req, res) => {
-  const { gameId, playerId } = req.params;
-  const gameState = gameSessions.get(gameId);
+// 路由：通过房间号加入游戏
+app.post('/api/game/join', (req, res) => {
+  const { roomCode, playerName, asSpectator } = req.body;
+  
+  const gameState = gameSessions.get(roomCode);
   
   if (!gameState) {
-    return res.status(404).json({ error: '游戏不存在' });
+    return res.status(404).json({ error: '房间不存在' });
+  }
+  
+  // 检查名称是否已存在（玩家和观战者中）
+  const nameExists = gameState.players.some(p => p.name === playerName) ||
+                     (gameState.spectators && gameState.spectators.some(s => s.name === playerName));
+  if (nameExists) {
+    return res.status(400).json({ error: '该昵称已被使用' });
+  }
+  
+  // 如果游戏已开始或明确选择观战，则作为观战者加入
+  if (gameState.gameStarted || asSpectator) {
+    if (!gameState.spectators) {
+      gameState.spectators = [];
+    }
+    
+    const spectatorId = gameState.spectators.length;
+    gameState.spectators.push({
+      id: spectatorId,
+      name: playerName,
+      joinedAt: new Date().toISOString()
+    });
+    
+    return res.json({
+      roomCode: roomCode,
+      playerId: null,
+      spectatorId: spectatorId,
+      isSpectator: true,
+      gameState: sanitizeGameState(gameState, null)
+    });
+  }
+  
+  // 作为玩家加入
+  if (gameState.players.length >= gameState.maxPlayers) {
+    return res.status(400).json({ error: '房间已满，只能以观战者身份加入' });
+  }
+  
+  const playerId = gameState.players.length;
+  gameState.players.push({
+    id: playerId,
+    name: playerName,
+    hand: [],
+    compounds: [],
+    isHost: false
+  });
+  
+  // 记录玩家到房间的映射
+  playerToRoom.set(playerName, {
+    roomCode: roomCode,
+    playerId: playerId,
+    joinTime: new Date().toISOString()
+  });
+  
+  res.json({
+    roomCode: roomCode,
+    playerId: playerId,
+    isSpectator: false,
+    gameState: sanitizeGameState(gameState, playerId)
+  });
+});
+
+// 路由：生成房间二维码
+app.get('/api/game/:roomCode/qrcode', async (req, res) => {
+  const { roomCode } = req.params;
+  const gameState = gameSessions.get(roomCode);
+  
+  if (!gameState) {
+    return res.status(404).json({ error: '房间不存在' });
+  }
+  
+  try {
+    // 生成加入链接
+    const joinUrl = `http://localhost:3000/join/${roomCode}`;
+    
+    // 生成二维码（Data URL格式）
+    const qrcodeDataUrl = await QRCode.toDataURL(joinUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#667eea',
+        light: '#ffffff'
+      }
+    });
+    
+    res.json({
+      qrcode: qrcodeDataUrl,
+      joinUrl: joinUrl,
+      roomCode: roomCode
+    });
+  } catch (error) {
+    res.status(500).json({ error: '生成二维码失败' });
+  }
+});
+
+// 路由：开始游戏
+app.post('/api/game/:roomCode/start', (req, res) => {
+  const { roomCode } = req.params;
+  const { playerId } = req.body;
+  
+  const gameState = gameSessions.get(roomCode);
+  
+  if (!gameState) {
+    return res.status(404).json({ error: '房间不存在' });
+  }
+  
+  const player = gameState.players.find(p => p.id === playerId);
+  if (!player || !player.isHost) {
+    return res.status(403).json({ error: '只有房主可以开始游戏' });
+  }
+  
+  if (gameState.players.length < 2) {
+    return res.status(400).json({ error: '至少需要2名玩家才能开始游戏' });
+  }
+  
+  // 根据玩家数量动态生成牌堆（每2人一组牌）
+  const deckMultiplier = Math.ceil(gameState.players.length / 2);
+  gameState.deck = gameLogic.initializeDeckForPlayers(gameState.players.length, deckMultiplier);
+  
+  // 给每个玩家发10张牌
+  for (const player of gameState.players) {
+    for (let i = 0; i < 10; i++) {
+      if (gameState.deck.length > 0) {
+        player.hand.push(gameState.deck.pop());
+      }
+    }
+  }
+  
+  gameState.gameStarted = true;
+  gameState.gameActive = true;
+  gameState.currentPlayer = 0;
+  
+  res.json({
+    success: true,
+    gameState: sanitizeGameState(gameState, playerId)
+  });
+});
+
+// 路由：获取房间信息（必须在通配路由之前）
+app.get('/api/game/:roomCode/info', (req, res) => {
+  const { roomCode } = req.params;
+  const gameState = gameSessions.get(roomCode);
+  
+  if (!gameState) {
+    return res.status(404).json({ error: '房间不存在' });
+  }
+  
+  res.json({
+    roomCode: roomCode,
+    playerCount: gameState.players.length,
+    maxPlayers: gameState.maxPlayers,
+    gameStarted: gameState.gameStarted,
+    players: gameState.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      isHost: p.isHost,
+      cardCount: p.hand.length
+    })),
+    spectators: (gameState.spectators || []).map(s => ({
+      id: s.id,
+      name: s.name
+    })),
+    spectatorCount: (gameState.spectators || []).length
+  });
+});
+
+// 路由：获取游戏状态（通配路由，必须在具体路由之后）
+app.get('/api/game/:roomCode/:playerId', (req, res) => {
+  const { roomCode, playerId } = req.params;
+  const gameState = gameSessions.get(roomCode);
+  
+  if (!gameState) {
+    return res.status(404).json({ error: '房间不存在' });
   }
   
   res.json({
@@ -55,6 +422,7 @@ app.get('/api/game/:gameId/:playerId', (req, res) => {
   });
 });
 
+// 路由：获取可能的物质
 // 路由：获取可能的物质
 app.post('/api/compounds', (req, res) => {
   const { elements } = req.body;
@@ -65,6 +433,82 @@ app.post('/api/compounds', (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// 路由：获取db.json中的元素列表
+app.get('/api/elements', (req, res) => {
+  try {
+    const dbPath = path.join(__dirname, '../db.json');
+    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+    const elements = db.metadata.elements || [];
+    res.json({ elements });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 路由：获取所有房间列表（大厅）
+app.get('/api/rooms', (req, res) => {
+  const rooms = [];
+  
+  for (const [roomCode, gameState] of gameSessions.entries()) {
+    rooms.push({
+      roomCode: roomCode,
+      playerCount: gameState.players.length,
+      maxPlayers: gameState.maxPlayers,
+      gameStarted: gameState.gameStarted,
+      hostName: gameState.players[0]?.name || '未知',
+      spectatorCount: (gameState.spectators || []).length,
+      createdAt: gameState.createdAt
+    });
+  }
+  
+  // 按创建时间排序，最新的在前
+  rooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+  res.json({ rooms });
+});
+
+// 路由：检查玩家是否有未完成的游戏
+app.get('/api/player/:playerName/session', (req, res) => {
+  const { playerName } = req.params;
+  
+  // 检查playerToRoom映射
+  const sessionInfo = playerToRoom.get(playerName);
+  
+  if (!sessionInfo) {
+    return res.json({ hasSession: false, session: null });
+  }
+  
+  // 检查游戏是否还存在
+  const gameState = gameSessions.get(sessionInfo.roomCode);
+  
+  if (!gameState) {
+    // 游戏已结束，清理映射
+    playerToRoom.delete(playerName);
+    return res.json({ hasSession: false, session: null });
+  }
+  
+  // 检查玩家是否仍在游戏中
+  const player = gameState.players.find(p => p.id === sessionInfo.playerId);
+  
+  if (!player) {
+    // 玩家已不在游戏中，清理映射
+    playerToRoom.delete(playerName);
+    return res.json({ hasSession: false, session: null });
+  }
+  
+  // 返回可用的游戏会话
+  return res.json({
+    hasSession: true,
+    session: {
+      roomCode: sessionInfo.roomCode,
+      playerId: sessionInfo.playerId,
+      playerName: player.name,
+      gameStarted: gameState.gameStarted,
+      isOffline: player.isOffline || false
+    }
+  });
 });
 
 // 路由：检查物质是否能够反应
@@ -83,12 +527,12 @@ app.post('/api/reaction/check', (req, res) => {
 });
 
 // 路由：获取游戏统计
-app.get('/api/game/:gameId/stats', (req, res) => {
-  const { gameId } = req.params;
-  const gameState = gameSessions.get(gameId);
+app.get('/api/game/:roomCode/stats', (req, res) => {
+  const { roomCode } = req.params;
+  const gameState = gameSessions.get(roomCode);
   
   if (!gameState) {
-    return res.status(404).json({ error: '游戏不存在' });
+    return res.status(404).json({ error: '房间不存在' });
   }
   
   res.json({
@@ -98,30 +542,112 @@ app.get('/api/game/:gameId/stats', (req, res) => {
 
 // WebSocket 连接处理
 io.on('connection', (socket) => {
-  console.log('玩家连接:', socket.id);
+  console.log('✓ 玩家连接:', socket.id);
   
-  socket.on('joinGame', (data) => {
-    const { gameId, playerId, playerName } = data;
-    const gameState = gameSessions.get(gameId);
+  socket.on('joinRoom', (data) => {
+    const { roomCode, playerId, playerName } = data;
+    const gameState = gameSessions.get(roomCode);
     
     if (!gameState) {
-      socket.emit('error', '游戏不存在');
+      socket.emit('error', '房间不存在');
       return;
     }
     
-    socket.join(gameId);
+    socket.join(roomCode);
     playerSockets.set(playerName, socket.id);
     
-    // 向所有玩家广播当前游戏状态
-    io.to(gameId).emit('gameStateUpdate', {
-      gameState: sanitizeGameState(gameState, playerId),
-      players: gameState.players.length
+    // 记录socket与玩家的关联
+    const player = gameState.players.find(p => p.id === playerId);
+    socketToPlayer.set(socket.id, {
+      roomCode: roomCode,
+      playerId: playerId,
+      playerName: playerName,
+      isHost: player ? player.isHost : false
     });
+    
+    // 如果是房主重新连接，取消房间关闭的超时
+    if (player && player.isHost) {
+      const cleanupKey = roomCode;
+      const cleanup = pendingCleanup.get(cleanupKey);
+      if (cleanup && cleanup.isHost) {
+        console.log(`✓ 房主 ${playerName} 已重新连接，取消房间关闭超时`);
+        clearTimeout(cleanup.timeoutId);
+        pendingCleanup.delete(cleanupKey);
+      }
+    } else if (player) {
+      // 如果是普通玩家重新连接，标记为在线并取消昵称释放的超时
+      const cleanupKey = `${roomCode}:${playerId}`;
+      const cleanup = pendingCleanup.get(cleanupKey);
+      if (cleanup) {
+        console.log(`✓ 玩家 ${playerName} 已重新连接，取消昵称释放超时`);
+        clearTimeout(cleanup.timeoutId);
+        pendingCleanup.delete(cleanupKey);
+        
+        // 标记为在线
+        player.isOffline = false;
+      }
+    }
+    
+    // 向所有玩家广播玩家加入
+    io.to(roomCode).emit('playerJoined', {
+      playerId: playerId,
+      playerName: playerName,
+      playerCount: gameState.players.length
+    });
+    
+    // 向所有玩家广播当前游戏状态
+    broadcastGameStateToAll(io, roomCode, gameState);
+  });
+  
+  socket.on('startGame', (data) => {
+    const { roomCode, playerId } = data;
+    const gameState = gameSessions.get(roomCode);
+    
+    if (!gameState) {
+      socket.emit('error', '房间不存在');
+      return;
+    }
+    
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player || !player.isHost) {
+      socket.emit('error', '只有房主可以开始游戏');
+      return;
+    }
+    
+    // 广播游戏开始 - 为每个玩家发送不同的sanitized gameState
+    gameState.players.forEach((player) => {
+      const sockets = io.sockets.adapter.rooms.get(roomCode);
+      if (!sockets) return;
+      
+      for (const socketId of sockets) {
+        const socketInfo = socketToPlayer.get(socketId);
+        if (socketInfo && socketInfo.playerId === player.id) {
+          // 发送给这个玩家他自己的视图
+          io.to(socketId).emit('gameStarted', {
+            gameState: sanitizeGameState(gameState, player.id)
+          });
+        }
+      }
+    });
+    
+    // 如果有观战者，发送不包含玩家手牌的视图
+    const sockets = io.sockets.adapter.rooms.get(roomCode);
+    if (sockets) {
+      for (const socketId of sockets) {
+        const socketInfo = socketToPlayer.get(socketId);
+        // 如果这个socket不是任何玩家，说明是观战者
+        if (socketInfo && !gameState.players.find(p => p.id === socketInfo.playerId)) {
+          io.to(socketId).emit('gameStarted', {
+            gameState: sanitizeGameState(gameState, null)
+          });
+        }
+      }
+    }
   });
   
   socket.on('playCard', (data) => {
-    const { gameId, playerId, card, compound } = data;
-    const gameState = gameSessions.get(gameId);
+    const { roomCode, playerId, card, compound } = data;
+    const gameState = gameSessions.get(roomCode);
     
     if (!gameState || gameState.currentPlayer !== playerId) {
       socket.emit('error', '不是你的回合');
@@ -136,9 +662,17 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // 特殊卡牌列表（无需检查反应）
+    const specialCards = ['+2', '+4', 'Au', 'He', 'Ne', 'Ar', 'Kr'];
+    
     // 如果打出的是物质，检查是否能反应
-    if (compound) {
-      if (!database.canPlayCompound(compound, gameState.lastCompound)) {
+    if (compound && !specialCards.includes(card)) {
+      // 检查是否是单质（单个元素）
+      const elements = ['H', 'O', 'C', 'N', 'F', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Zn', 'Br', 'I', 'Ag'];
+      const isElement = elements.includes(compound);
+      
+      // 单质可以随时打出，化合物需要检查反应
+      if (!isElement && !database.canPlayCompound(compound, gameState.lastCompound)) {
         socket.emit('error', '这个物质无法与上一个物质反应');
         return;
       }
@@ -162,12 +696,18 @@ io.on('connection', (socket) => {
     
     // 检查是否胜利
     if (GameRules.isWinner(player)) {
-      io.to(gameId).emit('gameOver', {
+      io.to(roomCode).emit('gameOver', {
         winner: playerId,
-        playerName: data.playerName,
+        playerName: player.name,
         finalScore: GameRules.calculateScore(player.hand)
       });
-      gameSessions.delete(gameId);
+      
+      // 清理该房间所有玩家的会话映射
+      gameState.players.forEach(p => {
+        playerToRoom.delete(p.name);
+      });
+      
+      gameSessions.delete(roomCode);
       return;
     }
     
@@ -175,24 +715,25 @@ io.on('connection', (socket) => {
     GameRules.nextPlayer(gameState);
     
     // 广播游戏状态更新
-    io.to(gameId).emit('gameStateUpdate', {
-      gameState: sanitizeGameState(gameState, null),
-      lastPlay: { playerId, card, compound, playerName: data.playerName }
-    });
+    broadcastGameStateToAll(io, roomCode, gameState);
   });
   
   socket.on('drawCard', (data) => {
-    const { gameId, playerId } = data;
-    const gameState = gameSessions.get(gameId);
+    const { roomCode, playerId } = data;
+    const gameState = gameSessions.get(roomCode);
     
     if (!gameState || gameState.currentPlayer !== playerId) {
-      socket.emit('error', '不是你的回合或游戏不存在');
+      socket.emit('error', '不是你的回合或房间不存在');
       return;
     }
     
     const player = gameState.players[playerId];
     // 摸2张牌
     GameRules.drawCard(player, gameState, 2);
+    
+    if (!gameState.history) {
+      gameState.history = [];
+    }
     
     gameState.history.push({
       action: 'draw',
@@ -204,37 +745,235 @@ io.on('connection', (socket) => {
     GameRules.nextPlayer(gameState);
     
     // 广播游戏状态更新
-    io.to(gameId).emit('gameStateUpdate', {
-      gameState: sanitizeGameState(gameState, null),
-      lastPlay: { playerId, action: 'draw', playerName: data.playerName }
-    });
+    broadcastGameStateToAll(io, roomCode, gameState);
   });
   
   socket.on('disconnect', () => {
-    console.log('玩家断开连接:', socket.id);
+    console.log('✗ 玩家断开连接:', socket.id);
+    
+    // 获取断开连接的玩家信息
+    const playerInfo = socketToPlayer.get(socket.id);
+    if (!playerInfo) return;
+    
+    const { roomCode, playerId, playerName, isHost } = playerInfo;
+    const gameState = gameSessions.get(roomCode);
+    
+    if (!gameState) {
+      socketToPlayer.delete(socket.id);
+      playerSockets.delete(playerName);
+      return;
+    }
+    
+    // 如果是房主离开，设置30秒后关闭房间
+    if (isHost) {
+      console.log(`✗ 房主 ${playerName} 离开，30秒后将关闭房间 ${roomCode}`);
+      
+      // 设置30秒后关闭房间的超时
+      const timeoutId = setTimeout(() => {
+        console.log(`⏱️ 30秒超时，关闭房间 ${roomCode}`);
+        
+        const currentGameState = gameSessions.get(roomCode);
+        if (!currentGameState) return;
+        
+        // 通知所有玩家房间已关闭
+        io.to(roomCode).emit('roomClosed', {
+          message: '房主长时间未返回，房间关闭',
+          reason: 'hostTimeout'
+        });
+        
+        // 清理所有玩家的socket映射
+        currentGameState.players.forEach(p => {
+          playerSockets.delete(p.name);
+        });
+        if (currentGameState.spectators) {
+          currentGameState.spectators.forEach(s => {
+            playerSockets.delete(s.name);
+          });
+        }
+        
+        // 删除房间
+        gameSessions.delete(roomCode);
+        pendingCleanup.delete(roomCode);
+        
+        console.log(`✓ 房间 ${roomCode} 已关闭`);
+      }, 30000); // 30秒
+      
+      // 保存超时ID用于可能的取消
+      pendingCleanup.set(roomCode, {
+        isHost: true,
+        playerName: playerName,
+        timeoutId: timeoutId
+      });
+      
+      socketToPlayer.delete(socket.id);
+    } else {
+      // 普通玩家或观战者离开，设置30秒后释放昵称
+      console.log(`✗ 玩家 ${playerName} 离开房间 ${roomCode}，30秒后释放昵称`);
+      
+      // 标记玩家为离线状态，不立即删除
+      const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+      if (playerIndex !== -1) {
+        gameState.players[playerIndex].isOffline = true;
+        
+        // 如果游戏已开始且在线玩家数量少于2人，结束游戏
+        const onlinePlayerCount = gameState.players.filter(p => !p.isOffline).length;
+        if (gameState.gameStarted && onlinePlayerCount < 2) {
+          gameState.gameActive = false;
+          io.to(roomCode).emit('gameOver', {
+            message: '在线玩家不足，游戏结束',
+            reason: 'notEnoughPlayers'
+          });
+        }
+      }
+      
+      socketToPlayer.delete(socket.id);
+      
+      // 设置30秒后释放昵称的超时
+      const timeoutId = setTimeout(() => {
+        console.log(`⏱️ 30秒超时，释放玩家昵称 ${playerName}`);
+        
+        const currentGameState = gameSessions.get(roomCode);
+        if (!currentGameState) {
+          playerSockets.delete(playerName);
+          pendingCleanup.delete(`${roomCode}:${playerId}`);
+          return;
+        }
+        
+        // 从玩家列表中移除
+        const idx = currentGameState.players.findIndex(p => p.id === playerId);
+        if (idx !== -1) {
+          currentGameState.players.splice(idx, 1);
+        } else {
+          // 从观战者列表中移除
+          if (currentGameState.spectators) {
+            const spectatorIdx = currentGameState.spectators.findIndex(s => s.name === playerName);
+            if (spectatorIdx !== -1) {
+              currentGameState.spectators.splice(spectatorIdx, 1);
+            }
+          }
+        }
+        
+        // 释放昵称和会话映射
+        playerSockets.delete(playerName);
+        playerToRoom.delete(playerName);
+        pendingCleanup.delete(`${roomCode}:${playerId}`);
+        
+        // 通知其他玩家
+        io.to(roomCode).emit('playerLeft', {
+          playerId: playerId,
+          playerName: playerName,
+          playerCount: currentGameState.players.length,
+          spectatorCount: currentGameState.spectators ? currentGameState.spectators.length : 0
+        });
+        
+        // 广播更新游戏状态
+        broadcastGameStateToAll(io, roomCode, currentGameState);
+        
+        console.log(`✓ 玩家昵称 ${playerName} 已释放`);
+      }, 30000); // 30秒
+      
+      // 保存超时ID用于可能的取消
+      pendingCleanup.set(`${roomCode}:${playerId}`, {
+        isHost: false,
+        playerName: playerName,
+        timeoutId: timeoutId
+      });
+      
+      // 通知其他玩家
+      io.to(roomCode).emit('playerLeft', {
+        playerId: playerId,
+        playerName: playerName,
+        playerCount: gameState.players.filter(p => !p.isOffline).length,
+        spectatorCount: gameState.spectators ? gameState.spectators.length : 0,
+        isTemporary: true
+      });
+      
+      // 广播更新游戏状态
+      broadcastGameStateToAll(io, roomCode, gameState);
+    }
   });
 });
 
+// 辅助函数：向房间内的所有玩家广播他们各自的sanitized gameState
+function broadcastGameStateToAll(io, roomCode, gameState) {
+  const sockets = io.sockets.adapter.rooms.get(roomCode);
+  if (!sockets) return;
+  
+  for (const socketId of sockets) {
+    const socketInfo = socketToPlayer.get(socketId);
+    if (socketInfo) {
+      const playerId = socketInfo.playerId;
+      io.to(socketId).emit('gameStateUpdate', {
+        gameState: sanitizeGameState(gameState, playerId)
+      });
+    }
+  }
+}
+
 // 辅助函数：隐藏其他玩家的卡牌
 function sanitizeGameState(gameState, playerId) {
+  // 确保 playerId 是数字进行比较
+  const playerIdNum = playerId !== null ? parseInt(playerId) : null;
+  
   const sanitized = {
+    roomCode: gameState.roomCode,
     currentPlayer: gameState.currentPlayer,
     direction: gameState.direction,
     lastCompound: gameState.lastCompound,
-    deckCount: gameState.deck.length,
+    deckCount: gameState.deck ? gameState.deck.length : 0,
     gameActive: gameState.gameActive,
-    players: gameState.players.map((player, idx) => ({
+    gameStarted: gameState.gameStarted,
+    maxPlayers: gameState.maxPlayers,
+    playerCount: gameState.players.length,
+    players: gameState.players.map((player) => ({
       id: player.id,
-      hand: idx === playerId ? player.hand : Array(player.hand.length).fill('unknown'),
+      name: player.name,
+      isHost: player.isHost,
+      hand: player.id === playerIdNum ? player.hand : Array(player.hand.length).fill('unknown'),
       compounds: player.compounds,
       handCount: player.hand.length
-    }))
+    })),
+    spectators: (gameState.spectators || []).map(s => ({
+      id: s.id,
+      name: s.name
+    })),
+    spectatorCount: (gameState.spectators || []).length
   };
   
   return sanitized;
 }
 
+// 404 处理
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `路由 ${req.method} ${req.path} 不存在`,
+    availableEndpoints: [
+      'GET /',
+      'POST /api/game/create',
+      'POST /api/game/join',
+      'GET /api/game/:roomCode/:playerId',
+      'GET /api/game/:roomCode/info',
+      'GET /api/game/:roomCode/qrcode',
+      'POST /api/game/:roomCode/start',
+      'POST /api/compounds',
+      'POST /api/reaction/check',
+      'GET /api/game/:roomCode/stats'
+    ]
+  });
+});
+
+// 错误处理
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err.message);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`服务器运行在端口 ${PORT}`);
+  console.log(`✓ 服务器运行在 http://localhost:${PORT}`);
+  console.log(`✓ WebSocket 服务已启动，等待连接...`);
 });

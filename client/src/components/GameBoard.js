@@ -4,17 +4,74 @@ import Card from './Card';
 import CompoundSelector from './CompoundSelector';
 import './GameBoard.css';
 
-const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
+const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpectator }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [compounds, setCompounds] = useState([]);
   const [selectedCompound, setSelectedCompound] = useState(null);
   const [showCompoundSelector, setShowCompoundSelector] = useState(false);
+  const [gameStartTime] = useState(new Date());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [turnStartTime, setTurnStartTime] = useState(new Date());
+  const [turnTimeRemaining, setTurnTimeRemaining] = useState(30);
+  const [lastCurrentPlayer, setLastCurrentPlayer] = useState(-1);
 
-  const isCurrentPlayer = gameState && gameState.currentPlayer === playerId;
+  const isCurrentPlayer = !isSpectator && gameState && gameState.currentPlayer === playerId;
+
+  // 更新全局计时器
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((new Date() - gameStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [gameStartTime]);
+
+  // 当轮次变化时，重置轮次计时器
+  useEffect(() => {
+    if (gameState && gameState.currentPlayer !== lastCurrentPlayer) {
+      setTurnStartTime(new Date());
+      setTurnTimeRemaining(30);
+      setLastCurrentPlayer(gameState.currentPlayer);
+    }
+  }, [gameState?.currentPlayer, lastCurrentPlayer]);
+
+  // 更新轮次计时器
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const elapsed = Math.floor((new Date() - turnStartTime) / 1000);
+      const remaining = Math.max(0, 30 - elapsed);
+      setTurnTimeRemaining(remaining);
+
+      // 如果超过30秒且是当前玩家，自动摸牌
+      if (remaining === 0 && isCurrentPlayer && socket) {
+        console.log('✗ 30秒超时，自动摸2张牌');
+        socket.emit('drawCard', {
+          roomCode,
+          playerId
+        });
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, [turnStartTime, isCurrentPlayer, socket, roomCode, playerId]);
 
   // 当玩家点击卡牌时，获取可能的物质
   const handleCardClick = async (card) => {
     if (!isCurrentPlayer) return;
+
+    // 检查是否是特殊卡牌（+2, +4, Au, He, Ne, Ar, Kr）
+    const specialCards = ['+2', '+4', 'Au', 'He', 'Ne', 'Ar', 'Kr'];
+    if (specialCards.includes(card)) {
+      // 特殊卡牌直接打出，不需要选择物质
+      if (socket) {
+        socket.emit('playCard', {
+          roomCode,
+          playerId,
+          card: card,
+          compound: null, // 特殊卡牌不需要物质
+          playerName
+        });
+      }
+      return;
+    }
 
     setSelectedCard(card);
 
@@ -23,10 +80,15 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
         elements: [card]
       });
 
-      setCompounds(response.data.compounds);
+      // 包含元素本身（单质）和可组成的化合物
+      const availableOptions = [card, ...response.data.compounds];
+      setCompounds(availableOptions);
       setShowCompoundSelector(true);
     } catch (error) {
       console.error('获取物质列表失败:', error);
+      // 即使失败，也允许打出元素本身
+      setCompounds([card]);
+      setShowCompoundSelector(true);
     }
   };
 
@@ -36,7 +98,7 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
     
     if (socket) {
       socket.emit('playCard', {
-        gameId,
+        roomCode,
         playerId,
         card: selectedCard,
         compound,
@@ -55,39 +117,68 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
 
     if (socket) {
       socket.emit('drawCard', {
-        gameId,
+        roomCode,
         playerId
       });
     }
+  };
+
+  // 格式化时间
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   if (!gameState) {
     return <div className="loading">加载中...</div>;
   }
 
-  const currentPlayer = gameState.players[playerId];
+  const currentPlayer = !isSpectator && playerId !== null ? gameState.players[playerId] : null;
+  const currentPlayerName = gameState.players[gameState.currentPlayer]?.name || `玩家${gameState.currentPlayer + 1}`;
 
   return (
     <div className="game-board">
+      {isSpectator && (
+        <div className="spectator-banner">
+          <span className="spectator-icon">👁️</span>
+          观战模式 - {playerName}
+        </div>
+      )}
+      
       {/* 游戏信息面板 */}
       <div className="game-info-panel">
         <div className="game-header">
           <h1>⚗️ 化学UNO</h1>
           <div className="game-stats">
             <div className="stat">
-              <span className="stat-label">游戏ID</span>
-              <span className="stat-value">{gameId.substring(0, 10)}...</span>
+              <span className="stat-label">房间号</span>
+              <span className="stat-value">{roomCode}</span>
+            </div>
+            <div className="stat">
+              <span className="stat-label">用时</span>
+              <span className="stat-value">{formatTime(elapsedTime)}</span>
             </div>
             <div className="stat">
               <span className="stat-label">剩余卡牌</span>
               <span className="stat-value">{gameState.deckCount}</span>
             </div>
-            <div className="stat">
-              <span className="stat-label">当前玩家</span>
-              <span className={`stat-value ${isCurrentPlayer ? 'current' : ''}`}>
-                玩家{gameState.currentPlayer + 1}
-              </span>
-            </div>
+          </div>
+        </div>
+
+        {/* 当前玩家及计时器 */}
+        <div className="current-player-section">
+          <div className="current-player-info">
+            <span className="label">当前玩家:</span>
+            <span className={`player-name ${isCurrentPlayer ? 'is-me' : ''}`}>
+              {currentPlayerName}
+            </span>
+            {isCurrentPlayer && <span className="your-turn-badge">轮到你了</span>}
+          </div>
+          <div className={`turn-timer ${turnTimeRemaining <= 10 ? 'warning' : ''} ${turnTimeRemaining <= 5 ? 'critical' : ''}`}>
+            <span className="timer-label">剩余时间:</span>
+            <span className="timer-value">{turnTimeRemaining}s</span>
           </div>
         </div>
 
@@ -109,7 +200,7 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
             {gameState.players.map((player, idx) => (
               idx !== playerId && (
                 <div key={idx} className={`player-info ${idx === gameState.currentPlayer ? 'active' : ''}`}>
-                  <span className="player-label">玩家{idx + 1}</span>
+                  <span className="player-label">{player.name || `玩家${idx + 1}`}</span>
                   <span className="hand-count">{player.handCount}张</span>
                 </div>
               )
@@ -118,7 +209,9 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
         </div>
 
         <div className="turn-indicator">
-          {isCurrentPlayer ? (
+          {isSpectator ? (
+            <div className="spectating">观战中...</div>
+          ) : isCurrentPlayer ? (
             <div className="your-turn">轮到你了！点击卡牌选择物质</div>
           ) : (
             <div className="waiting">等待中...</div>
@@ -126,27 +219,43 @@ const GameBoard = ({ gameState, gameId, playerId, socket, playerName }) => {
         </div>
       </div>
 
-      {/* 玩家手牌区 */}
-      <div className="player-hand-area">
-        <div className="hand-label">我的卡牌（{currentPlayer.handCount}张）</div>
-        <div className="hand-cards">
-          {currentPlayer.hand.map((card, idx) => (
-            <Card
-              key={idx}
-              card={card}
-              onClick={() => handleCardClick(card)}
-              isSelected={selectedCard === card}
-              disabled={!isCurrentPlayer}
-            />
-          ))}
-        </div>
+      {/* 玩家手牌区 - 观战者不显示 */}
+      {!isSpectator && currentPlayer && (
+        <div className="player-hand-area">
+          <div className="hand-label">我的卡牌（{currentPlayer.handCount}张）</div>
+          <div className="hand-cards">
+            {currentPlayer.hand.map((card, idx) => (
+              <Card
+                key={idx}
+                card={card}
+                onClick={() => handleCardClick(card)}
+                isSelected={selectedCard === card}
+                disabled={!isCurrentPlayer}
+              />
+            ))}
+          </div>
 
-        {isCurrentPlayer && (
-          <button className="draw-btn" onClick={handleDrawCard}>
-            摸牌 (无法打出)
-          </button>
-        )}
-      </div>
+          {isCurrentPlayer && (
+            <button className="draw-btn" onClick={handleDrawCard}>
+              摸牌 (无法打出)
+            </button>
+          )}
+        </div>
+      )}
+      
+      {/* 观战者视图显示所有玩家信息 */}
+      {isSpectator && gameState.spectators && (
+        <div className="spectator-info">
+          <h3>观战者列表 ({gameState.spectators.length})</h3>
+          <div className="spectators-mini-list">
+            {gameState.spectators.map((spec) => (
+              <span key={spec.id} className="spectator-tag">
+                👁️ {spec.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 物质选择器浮窗 */}
       {showCompoundSelector && (

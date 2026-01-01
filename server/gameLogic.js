@@ -118,6 +118,23 @@ function initializeDeck() {
   return shuffleDeck(deck);
 }
 
+// 根据玩家数量初始化卡牌堆（每2人增加一组牌）
+function initializeDeckForPlayers(playerCount, multiplier = null) {
+  const deck = [];
+  
+  // 如果没有指定倍数，根据玩家数量计算（每2人一组）
+  const deckMultiplier = multiplier || Math.ceil(playerCount / 2);
+  
+  for (const [card, count] of Object.entries(ELEMENT_COUNTS)) {
+    for (let i = 0; i < count * deckMultiplier; i++) {
+      deck.push(card);
+    }
+  }
+  
+  // 洗牌
+  return shuffleDeck(deck);
+}
+
 // 洗牌
 function shuffleDeck(deck) {
   const shuffled = [...deck];
@@ -207,6 +224,7 @@ function nextPlayer(gameState) {
 
 module.exports = {
   initializeGame,
+  initializeDeckForPlayers,
   getCompoundsByElements,
   getReactionBetweenCompounds,
   canPlayCompound,

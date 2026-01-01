@@ -7,6 +7,7 @@
 | 🎯 需求 | 📖 查看文档 |
 |--------|-----------|
 | 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
+| ⚠️ **看不到WebUI？** | [WebUI设置](docs/WEBUI_SETUP.md) |
 | 🎮 **游戏规则？** | 👇 下方详见 |
 | 👨‍💻 **要开发？** | [开发者指南](docs/DEVELOPER_GUIDE.md) |
 | 📋 **项目概览？** | [项目总结](docs/PROJECT_SUMMARY.md) |
