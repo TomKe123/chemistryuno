@@ -138,6 +138,35 @@ class ChemistryDatabase {
   }
 
   /**
+   * 获取元素对应的单质映射
+   */
+  getElementToSimpleSubstance() {
+    return {
+      'H': 'H2',
+      'O': 'O2',
+      'N': 'N2',
+      'Cl': 'Cl2',
+      'F': 'F2',
+      'Br': 'Br2',
+      'I': 'I2',
+      'P': 'P4',
+      'S': 'S8',
+      'C': 'C',
+      'Fe': 'Fe',
+      'Cu': 'Cu',
+      'Zn': 'Zn',
+      'Al': 'Al',
+      'Mg': 'Mg',
+      'Ca': 'Ca',
+      'Na': 'Na',
+      'K': 'K',
+      'Ag': 'Ag',
+      'Mn': 'Mn',
+      'Si': 'Si'
+    };
+  }
+
+  /**
    * 根据持有的元素获取可能的物质
    * @param {string[]} elements - 持有的元素
    * @returns {string[]} 可能的物质列表
@@ -145,12 +174,26 @@ class ChemistryDatabase {
   getCompoundsByElements(elements) {
     const elementSet = new Set(elements);
     const possibleCompounds = [];
+    const elementToSimple = this.getElementToSimpleSubstance();
 
+    // 如果是单个元素，添加对应的单质
+    if (elements.length === 1) {
+      const element = elements[0];
+      const simpleSubstance = elementToSimple[element];
+      if (simpleSubstance) {
+        possibleCompounds.push(simpleSubstance);
+      }
+    }
+
+    // 添加所有包含该元素的化合物
     for (const [compound, requiredElements] of Object.entries(this.compoundToElements)) {
       // 检查是否至少有一个必需的元素在玩家的元素中
       // 这样玩家打出 H 时可以看到所有含 H 的物质
       if (requiredElements.some(elem => elementSet.has(elem))) {
-        possibleCompounds.push(compound);
+        // 避免重复添加单质
+        if (!possibleCompounds.includes(compound)) {
+          possibleCompounds.push(compound);
+        }
       }
     }
 

@@ -13,14 +13,54 @@ const configService = require('./configService');
 
 const app = express();
 const server = http.createServer(app);
+
+// 配置CORS - 支持移动设备访问
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  // 支持局域网IP访问
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:3000$/,
+  // 支持任意IP地址（开发环境）
+  /^http:\/\/[\d.]+:3000$/
+];
+
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      // 允许没有origin的请求（如移动应用、Postman等）
+      if (!origin) return callback(null, true);
+      
+      // 检查origin是否在允许列表中
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') {
+          return allowed === origin;
+        } else if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return false;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.log(`🚫 拒绝的来源: ${origin}`);
+        callback(null, true); // 开发环境仍然允许，生产环境应该设为 false
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // 允许所有来源（开发环境）
+    callback(null, true);
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '1mb' }));
 
 // 根路由 - 服务器状态检查
@@ -605,8 +645,11 @@ io.on('connection', (socket) => {
         console.log(`✓ 玩家 ${playerName} 已重新连接，取消昵称释放超时`);
         clearTimeout(cleanup.timeoutId);
         pendingCleanup.delete(cleanupKey);
-        
-        // 标记为在线
+      }
+      
+      // 无论是否有超时清理，都要确保标记为在线
+      if (player.isOffline) {
+        console.log(`✓ 玩家 ${playerName} 从离线状态恢复为在线`);
         player.isOffline = false;
       }
     } else if (isSpectator) {

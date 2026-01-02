@@ -1,4 +1,4 @@
-# ⚗️ 化学UNO - Chemistry UNO Game
+node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
 
 一个基于化学知识的创意卡牌游戏网络应用。玩家需要打出能与上一个物质发生化学反应的物质来继续游戏。
 

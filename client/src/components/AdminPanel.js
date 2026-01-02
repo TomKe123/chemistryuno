@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import './AdminPanel.css';
+import API_ENDPOINTS from '../config/api';
 
 const EFFECT_OPTIONS = [
   { value: 'reverse', label: '反转 (reverse)' },
@@ -31,7 +32,7 @@ const AdminPanel = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get('http://localhost:5000/api/config');
+      const res = await axios.get(API_ENDPOINTS.config);
       setConfig(res.data.config);
       setDraft(deepClone(res.data.config));
       setLastSavedAt(new Date());
@@ -50,17 +51,37 @@ const AdminPanel = () => {
 
   const handleSave = async () => {
     if (!draft) return;
+    console.log('💾 开始保存配置...');
+    
+    // 清理 representative_reactions 中的空行
+    const cleanedDraft = {
+      ...draft,
+      representative_reactions: Object.fromEntries(
+        Object.entries(draft.representative_reactions || {}).map(([reactant, partners]) => {
+          // 过滤掉空行和只有空格的行
+          const cleanedPartners = Array.isArray(partners) 
+            ? partners.map(p => p.trim()).filter(Boolean)
+            : [];
+          return [reactant, cleanedPartners];
+        })
+      )
+    };
+    
+    console.log('  反应数量:', Object.keys(cleanedDraft.representative_reactions || {}).length);
     setSaving(true);
     setMessage('');
     setError('');
     try {
-      const res = await axios.put('http://localhost:5000/api/config', draft);
+      const res = await axios.put(API_ENDPOINTS.config, cleanedDraft);
       setConfig(res.data.config);
       setDraft(deepClone(res.data.config));
-      setMessage('配置已保存');
+      setMessage('配置已保存 ✓');
       setLastSavedAt(new Date());
+      console.log('✅ 配置保存成功');
     } catch (err) {
-      setError(err.response?.data?.error || '保存失败');
+      const errorMsg = err.response?.data?.error || '保存失败';
+      setError(errorMsg);
+      console.error('❌ 保存失败:', errorMsg);
     } finally {
       setSaving(false);
     }
@@ -117,18 +138,18 @@ const AdminPanel = () => {
   };
 
   const updateReactionPartners = (reactant, textValue) => {
-    const partners = textValue
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
+    // 直接将文本按行分割，不进行 trim 和 filter
+    // 这样用户可以正常输入和编辑
+    const partners = textValue.split('\n');
 
     setDraft((prev) => {
-      const next = deepClone(prev);
-      if (!next.representative_reactions) {
-        next.representative_reactions = {};
-      }
-      next.representative_reactions[reactant] = partners;
-      return next;
+      return {
+        ...prev,
+        representative_reactions: {
+          ...prev.representative_reactions,
+          [reactant]: partners
+        }
+      };
     });
   };
 
@@ -139,12 +160,15 @@ const AdminPanel = () => {
       .map((line) => line.trim())
       .filter(Boolean);
 
+    console.log(`➕ 添加新反应: ${newReaction.reactant.trim()} -> [${partners.join(', ')}]`);
+
     setDraft((prev) => {
       const next = deepClone(prev);
       if (!next.representative_reactions) {
         next.representative_reactions = {};
       }
       next.representative_reactions[newReaction.reactant.trim()] = partners;
+      console.log('✓ 反应已添加到草稿，需点击"保存配置"按钮');
       return next;
     });
     setNewReaction({ reactant: '', partners: '' });
@@ -353,30 +377,54 @@ const AdminPanel = () => {
         <section className="admin-card wide">
           <div className="section-header">
             <h2>反应规则</h2>
-            <span className="section-desc">每个反应物对应可与之反应的物质列表</span>
+            <span className="section-desc">每个反应物对应可与之反应的物质列表（修改后请点击顶部"保存配置"按钮）</span>
           </div>
+          {hasChanges && (
+            <div style={{ 
+              padding: '12px', 
+              background: '#fef3c7', 
+              border: '1px solid #fbbf24',
+              borderRadius: '8px',
+              marginBottom: '12px',
+              fontSize: '13px',
+              color: '#92400e'
+            }}>
+              ⚠️ 您有未保存的更改，请点击顶部"保存配置"按钮保存
+            </div>
+          )}
           <div className="reaction-grid">
-            {Object.entries(draft.representative_reactions || {}).sort((a, b) => a[0].localeCompare(b[0])).map(([reactant, partners]) => (
+            {Object.entries(draft.representative_reactions || {}).sort((a, b) => a[0].localeCompare(b[0])).map(([reactant, partners]) => {
+              // 确保 partners 是数组
+              const partnersList = Array.isArray(partners) ? partners : [];
+              const textValue = partnersList.join('\n');
+              
+              return (
               <div key={reactant} className="reaction-block">
                 <div className="reaction-title">{reactant}</div>
                 <textarea
                   rows={4}
-                  value={(partners || []).join('\n')}
+                  value={textValue}
                   onChange={(e) => updateReactionPartners(reactant, e.target.value)}
                   placeholder="一行一个物质"
+                  style={{ resize: 'vertical' }}
                 />
                 <button 
                   className="btn-delete"
                   onClick={() => {
-                    setDraft(prev => {
-                      const next = deepClone(prev);
-                      delete next.representative_reactions[reactant];
-                      return next;
-                    });
+                    if (window.confirm(`确定要删除反应物 "${reactant}" 吗？`)) {
+                      console.log(`🗑️ 删除反应: ${reactant}`);
+                      setDraft(prev => {
+                        const next = deepClone(prev);
+                        delete next.representative_reactions[reactant];
+                        console.log('✓ 反应已从草稿删除，需点击"保存配置"按钮');
+                        return next;
+                      });
+                    }
                   }}
                 >删除</button>
               </div>
-            ))}
+              );
+            })}
           </div>
           <div className="inline-form">
             <input

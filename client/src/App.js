@@ -5,6 +5,7 @@ import GameBoard from './components/GameBoard';
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
 import './App.css';
+import { SOCKET_URL } from './config/api';
 
 const App = () => {
   const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
@@ -54,7 +55,7 @@ const GameApp = () => {
 
   // 初始化Socket连接
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

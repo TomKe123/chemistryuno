@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './GameLobby.css';
+import API_ENDPOINTS from '../config/api';
 
 const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
   const [activeTab, setActiveTab] = useState('lobby');
@@ -24,7 +25,7 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
     
     setCheckingSession(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/player/${encodeURIComponent(name.trim())}/session`);
+      const response = await axios.get(API_ENDPOINTS.playerSession(name.trim()));
       if (response.data.hasSession) {
         setExistingSession(response.data.session);
       } else {
@@ -54,7 +55,14 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
   // 重新加入现有游戏
   const handleRejoinSession = () => {
     if (existingSession) {
-      onGameReady(existingSession.roomCode, existingSession.playerId, false);
+      console.log('重新加入游戏:', existingSession);
+      // 正确传递参数：roomCode, playerId, playerName, isSpectator
+      onGameReady(
+        existingSession.roomCode, 
+        existingSession.playerId, 
+        existingSession.playerName,
+        false
+      );
       setExistingSession(null);
     }
   };
@@ -68,7 +76,7 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
   const fetchRooms = async () => {
     setLoadingRooms(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/rooms');
+      const response = await axios.get(API_ENDPOINTS.rooms);
       setRooms(response.data.rooms);
     } catch (err) {
       console.error('获取房间列表失败:', err);
@@ -103,10 +111,16 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
       return;
     }
     
+    console.log('📱 开始创建房间...');
+    console.log('API端点:', API_ENDPOINTS.createGame);
+    console.log('玩家名称:', playerName.trim());
+    
     try {
-      const response = await axios.post('http://localhost:5000/api/game/create', {
+      const response = await axios.post(API_ENDPOINTS.createGame, {
         playerName: playerName.trim()
       });
+      
+      console.log('✅ 创建房间成功:', response.data);
       
       setRoomCode(response.data.roomCode);
       setPlayerId(response.data.playerId);
@@ -117,11 +131,24 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
       console.log('创建房间返回的 gameState:', response.data.gameState);
       
       // 获取二维码
-      const qrResponse = await axios.get(`http://localhost:5000/api/game/${response.data.roomCode}/qrcode`);
-      setQrcode(qrResponse.data.qrcode);
+      try {
+        const qrResponse = await axios.get(API_ENDPOINTS.gameQrcode(response.data.roomCode));
+        setQrcode(qrResponse.data.qrcode);
+        console.log('✅ 二维码获取成功');
+      } catch (qrErr) {
+        console.warn('⚠️ 二维码获取失败:', qrErr.message);
+        // 二维码失败不影响房间创建
+      }
       
     } catch (err) {
-      setError(err.response?.data?.error || '创建房间失败');
+      console.error('❌ 创建房间失败:', err);
+      console.error('错误详情:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
+      setError(err.response?.data?.error || err.message || '创建房间失败，请检查网络连接');
     }
   };
 
@@ -137,12 +164,20 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
       return;
     }
     
+    console.log('📱 开始加入房间...');
+    console.log('API端点:', API_ENDPOINTS.joinGame);
+    console.log('房间号:', roomToJoin);
+    console.log('玩家名称:', playerName.trim());
+    console.log('观战模式:', asSpectator);
+    
     try {
-      const response = await axios.post('http://localhost:5000/api/game/join', {
+      const response = await axios.post(API_ENDPOINTS.joinGame, {
         roomCode: roomToJoin,
         playerName: playerName.trim(),
         asSpectator: asSpectator
       });
+      
+      console.log('✅ 加入房间成功:', response.data);
       
       setRoomCode(response.data.roomCode);
       setPlayerId(response.data.playerId);
@@ -157,14 +192,21 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
       }
       
     } catch (err) {
-      setError(err.response?.data?.error || '加入房间失败');
+      console.error('❌ 加入房间失败:', err);
+      console.error('错误详情:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
+      setError(err.response?.data?.error || err.message || '加入房间失败，请检查网络连接');
     }
   };
 
   // 开始游戏
   const handleStartGame = async () => {
     try {
-      await axios.post(`http://localhost:5000/api/game/${roomCode}/start`, {
+      await axios.post(API_ENDPOINTS.startGame(roomCode), {
         playerId: playerId
       });
       
@@ -181,7 +223,7 @@ const GameLobby = ({ onGameReady, playerName, setPlayerName }) => {
     
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/game/${roomCode}/info`);
+        const response = await axios.get(API_ENDPOINTS.gameInfo(roomCode));
         console.log('轮询返回的房间信息:', response.data.gameState || response.data);
         
         // 处理两种可能的返回格式

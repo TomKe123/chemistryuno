@@ -4,6 +4,7 @@ import Card from './Card';
 import CompoundSelector from './CompoundSelector';
 import { formatFormula } from '../utils/chemistryFormatter';
 import './GameBoard.css';
+import API_ENDPOINTS from '../config/api';
 
 
 const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpectator }) => {
@@ -81,19 +82,19 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
 
     try {
       console.log('📡 请求化合物列表...');
-      const response = await axios.post('http://localhost:5000/api/compounds', {
+      const response = await axios.post(API_ENDPOINTS.compounds, {
         elements: [card]
       });
 
-      // 包含元素本身（单质）和可组成的化合物
-      const availableOptions = [card, ...response.data.compounds];
+      // 服务器返回的列表已包含对应单质和所有化合物
+      const availableOptions = response.data.compounds;
       console.log('✅ 可选物质:', availableOptions);
       setCompounds(availableOptions);
       setShowCompoundSelector(true);
     } catch (error) {
       console.error('❌ 获取物质列表失败:', error);
-      // 即使失败，也允许打出元素本身
-      setCompounds([card]);
+      // 即使失败，也显示空列表并提示
+      setCompounds([]);
       setShowCompoundSelector(true);
     }
   };

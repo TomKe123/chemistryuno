@@ -247,6 +247,18 @@
   padding: 10px;
   background: #f8fafc;
   position: relative;
+  transition: all 0.2s ease;
+}
+
+.compound-block:hover,
+.reaction-block:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reaction-block textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .btn-delete {
