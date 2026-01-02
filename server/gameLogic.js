@@ -1,26 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+const configService = require('./configService');
 
-// 读取db.json
-const dbPath = path.join(__dirname, '../db.json');
-const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+function getConfig() {
+  return configService.getConfig();
+}
 
-// 游戏常量
-const ELEMENT_COUNTS = {
-  'H': 12, 'O': 12,
-  'C': 4, 'N': 4, 'F': 4, 'Na': 4, 'Mg': 4, 'Al': 4, 'Si': 4, 'P': 4,
-  'S': 4, 'Cl': 4, 'K': 4, 'Ca': 4, 'Mn': 4, 'Fe': 4, 'Cu': 4, 'Zn': 4,
-  'Br': 4, 'I': 4, 'Ag': 4,
-  '+4': 4, '+2': 8,
-  'He': 1, 'Ne': 1, 'Ar': 1, 'Kr': 1,
-  'Au': 4
-};
+function getElementCounts() {
+  return configService.getElementCounts();
+}
 
-const SPECIAL_CARDS = {
-  'He': 'reverse', 'Ne': 'reverse', 'Ar': 'reverse', 'Kr': 'reverse',
-  'Au': 'skip',
-  '+4': 'draw4', '+2': 'draw2'
-};
+function getSpecialCards() {
+  return configService.getSpecialCards();
+}
 
 // 建立物质到元素的映射
 function buildCompoundToElements() {
@@ -28,8 +18,10 @@ function buildCompoundToElements() {
   
   const allCompounds = [];
   
+  const db = getConfig();
+
   // 收集所有物质
-  for (const category in db.common_compounds) {
+  for (const category in db.common_compounds || {}) {
     if (Array.isArray(db.common_compounds[category])) {
       allCompounds.push(...db.common_compounds[category]);
     } else if (typeof db.common_compounds[category] === 'object') {
@@ -71,7 +63,8 @@ function extractElements(formula) {
 
 // 获取两个物质之间的反应关系
 function getReactionBetweenCompounds(compound1, compound2) {
-  for (const reaction of db.representative_reactions) {
+  const db = getConfig();
+  for (const reaction of db.representative_reactions || []) {
     if (reaction.reactions) {
       for (const rxn of reaction.reactions) {
         // 简化匹配：只检查两个物质是否都在反应中
@@ -107,8 +100,9 @@ function getCompoundsByElements(elements) {
 // 初始化卡牌堆
 function initializeDeck() {
   const deck = [];
-  
-  for (const [card, count] of Object.entries(ELEMENT_COUNTS)) {
+  const elementCounts = getElementCounts();
+
+  for (const [card, count] of Object.entries(elementCounts)) {
     for (let i = 0; i < count; i++) {
       deck.push(card);
     }
@@ -121,11 +115,12 @@ function initializeDeck() {
 // 根据玩家数量初始化卡牌堆（每2人增加一组牌）
 function initializeDeckForPlayers(playerCount, multiplier = null) {
   const deck = [];
+  const elementCounts = getElementCounts();
   
   // 如果没有指定倍数，根据玩家数量计算（每2人一组）
   const deckMultiplier = multiplier || Math.ceil(playerCount / 2);
   
-  for (const [card, count] of Object.entries(ELEMENT_COUNTS)) {
+  for (const [card, count] of Object.entries(elementCounts)) {
     for (let i = 0; i < count * deckMultiplier; i++) {
       deck.push(card);
     }
@@ -194,7 +189,7 @@ function canPlayCompound(currentCompound, lastCompound, compoundMap) {
 
 // 处理特殊卡牌
 function applySpecialCard(card, gameState) {
-  const special = SPECIAL_CARDS[card];
+  const special = getSpecialCards()[card];
   
   if (special === 'reverse') {
     gameState.direction *= -1;
@@ -232,6 +227,6 @@ module.exports = {
   nextPlayer,
   extractElements,
   buildCompoundToElements,
-  SPECIAL_CARDS,
-  ELEMENT_COUNTS
+  getSpecialCards,
+  getElementCounts
 };

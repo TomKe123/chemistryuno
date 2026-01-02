@@ -9,6 +9,7 @@ const path = require('path');
 const gameLogic = require('./gameLogic');
 const database = require('./database');
 const GameRules = require('./rules');
+const configService = require('./configService');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,7 +21,7 @@ const io = socketIo(server, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // 根路由 - 服务器状态检查
 app.get('/', (req, res) => {
@@ -437,12 +438,30 @@ app.post('/api/compounds', (req, res) => {
   }
 });
 
-// 路由：获取db.json中的元素列表
+// 路由：获取/更新可编辑配置（卡牌、物质、反应规则）
+app.get('/api/config', (req, res) => {
+  res.json({ config: configService.getConfig() });
+});
+
+app.put('/api/config', (req, res) => {
+  const incoming = req.body;
+
+  if (!incoming || typeof incoming !== 'object') {
+    return res.status(400).json({ error: '配置格式无效' });
+  }
+
+  try {
+    const saved = configService.saveConfig(incoming);
+    res.json({ success: true, config: saved });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 路由：获取配置中的元素列表
 app.get('/api/elements', (req, res) => {
   try {
-    const dbPath = path.join(__dirname, '../db.json');
-    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    const elements = db.metadata.elements || [];
+    const elements = configService.getElementsList();
     res.json({ elements });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -518,10 +537,9 @@ app.post('/api/reaction/check', (req, res) => {
   const { compound1, compound2 } = req.body;
   
   try {
-    const reaction = database.getReactionBetweenCompounds(compound1, compound2);
+    const canReact = database.getReactionBetweenCompounds(compound1, compound2);
     res.json({
-      canReact: reaction !== null,
-      reaction: reaction
+      canReact: canReact
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -677,29 +695,68 @@ io.on('connection', (socket) => {
     }
     
     // 特殊卡牌列表（无需检查反应）
-    const specialCards = ['+2', '+4', 'Au', 'He', 'Ne', 'Ar', 'Kr'];
+    const specialCards = Object.keys(configService.getSpecialCards());
+    let compoundElements = [];
     
-    // 如果打出的是物质，检查是否能反应
+    // 如果打出的是物质，进行合法性与反应性校验
     if (compound && !specialCards.includes(card)) {
-      // 检查是否是单质（单个元素）
-      const elements = ['H', 'O', 'C', 'N', 'F', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Zn', 'Br', 'I', 'Ag'];
+      const elements = configService.getElementsList();
       const isElement = elements.includes(compound);
-      
-      console.log(`🔍 检查物质 - compound:${compound}, isElement:${isElement}, lastCompound:${gameState.lastCompound}`);
-      
-      // 单质可以随时打出，化合物需要检查反应
-      if (!isElement && !database.canPlayCompound(compound, gameState.lastCompound)) {
-        console.log(`❌ 物质${compound}无法与${gameState.lastCompound}反应`);
-        socket.emit('error', '这个物质无法与上一个物质反应');
+
+      // 1) 化合物必须存在于 common_compounds 中
+      if (!isElement && !database.isKnownCompound(compound)) {
+        socket.emit('error', '该物质不在可用列表中');
         return;
+      }
+
+      // 2) 获取组成元素：单质则为自身，化合物从数据库查询
+      if (isElement) {
+        compoundElements = [compound];
+      } else {
+        compoundElements = database.compoundToElements?.[compound] || [];
+      }
+      
+      if (compoundElements.length === 0 || !compoundElements.includes(card)) {
+        socket.emit('error', '所选物质不包含该元素，无法打出');
+        return;
+      }
+
+      // 3) 检查玩家是否持有组成所需的全部元素（至少各一张）
+      const handCounts = player.hand.reduce((acc, el) => {
+        acc[el] = (acc[el] || 0) + 1;
+        return acc;
+      }, {});
+
+      const missing = compoundElements.find(el => (handCounts[el] || 0) <= 0);
+      if (missing) {
+        socket.emit('error', `你缺少所需元素: ${missing}`);
+        return;
+      }
+
+      // 4) 若已有上一物质，则必须在反应列表中存在对应关系
+      if (gameState.lastCompound) {
+        const canReact = database.getReactionBetweenCompounds(gameState.lastCompound, compound);
+        if (!canReact) {
+          socket.emit('error', '该物质无法与上一物质反应');
+          return;
+        }
       }
     }
     
     console.log(`✅ 验证通过，打出卡牌${card}，物质${compound}`);
     
-    // 移除卡牌
-    const index = player.hand.indexOf(card);
-    player.hand.splice(index, 1);
+    // 移除卡牌/所需元素
+    if (compound && !specialCards.includes(card)) {
+      compoundElements.forEach(el => {
+        const idx = player.hand.indexOf(el);
+        if (idx !== -1) {
+          player.hand.splice(idx, 1);
+        }
+      });
+    } else {
+      const index = player.hand.indexOf(card);
+      player.hand.splice(index, 1);
+    }
     
     // 记录物质和卡牌
     if (compound) {
@@ -708,9 +765,10 @@ io.on('connection', (socket) => {
     }
     gameState.lastCard = card;
     
-    // 如果是特殊卡牌，应用效果
+    // 如果是特殊卡牌，应用效果并清空上一物质（特殊牌不参与反应链）
     if (GameRules.isSpecialCard(card)) {
       GameRules.applySpecialCard(card, gameState);
+      gameState.lastCompound = null;
     }
     
     // 检查是否胜利
@@ -763,6 +821,12 @@ io.on('connection', (socket) => {
       player: playerId,
       cardsDrawn: 2
     });
+    
+    // 玩家无法出牌而摸牌，清除场上物质，下家可自由出牌
+    if (gameState.lastCompound) {
+      console.log(`玩家${playerId}无法打出反应物质，清除场上物质: ${gameState.lastCompound}`);
+      gameState.lastCompound = null;
+    }
     
     // 移到下一个玩家
     GameRules.nextPlayer(gameState);

@@ -2,9 +2,34 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import GameLobby from './components/GameLobby';
 import GameBoard from './components/GameBoard';
+import AdminPanel from './components/AdminPanel';
+import AdminLogin from './components/AdminLogin';
 import './App.css';
 
 const App = () => {
+  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+  const adminPassword = process.env.REACT_APP_ADMIN || '';
+  const [adminAuthed, setAdminAuthed] = useState(() => sessionStorage.getItem('adminAuthed') === 'true');
+
+  useEffect(() => {
+    sessionStorage.setItem('adminAuthed', adminAuthed ? 'true' : 'false');
+  }, [adminAuthed]);
+
+  if (isAdminRoute) {
+    return adminAuthed ? (
+      <AdminPanel />
+    ) : (
+      <AdminLogin
+        expectedPassword={adminPassword}
+        onSuccess={() => setAdminAuthed(true)}
+      />
+    );
+  }
+
+  return <GameApp />;
+};
+
+const GameApp = () => {
   const [gameState, setGameState] = useState(null);
   const [roomCode, setRoomCode] = useState(null);
   const [playerId, setPlayerId] = useState(null);

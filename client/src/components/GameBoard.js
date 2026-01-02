@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Card from './Card';
 import CompoundSelector from './CompoundSelector';
+import { formatFormula } from '../utils/chemistryFormatter';
 import './GameBoard.css';
+
 
 const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpectator }) => {
   const [selectedCard, setSelectedCard] = useState(null);
@@ -31,7 +33,7 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
       setTurnTimeRemaining(30);
       setLastCurrentPlayer(gameState.currentPlayer);
     }
-  }, [gameState?.currentPlayer, lastCurrentPlayer]);
+  }, [gameState, gameState?.currentPlayer, lastCurrentPlayer]);
 
   // 更新轮次计时器
   useEffect(() => {
@@ -204,7 +206,7 @@ const GameBoard = ({ gameState, roomCode, playerId, socket, playerName, isSpecta
                 <div className="played-card-display">
                   <div className="played-card-label">卡牌: <strong>{gameState.lastCard}</strong></div>
                   {gameState.lastCompound && (
-                    <div className="played-compound-label">物质: <strong>{gameState.lastCompound}</strong></div>
+                    <div className="played-compound-label">物质: <strong>{formatFormula(gameState.lastCompound)}</strong></div>
                   )}
                 </div>
               ) : (

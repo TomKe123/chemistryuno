@@ -1,17 +1,26 @@
-const fs = require('fs');
-const path = require('path');
-
-// 读取db.json
-const dbPath = path.join(__dirname, '../db.json');
-const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+const configService = require('./configService');
 
 /**
  * 物质和反应库 - 提供优化的查询性能
  */
 class ChemistryDatabase {
   constructor() {
+    this.config = configService.getConfig();
     this.compoundToElements = this.buildCompoundToElements();
     this.reactionMap = this.buildReactionMap();
+
+    configService.onChange((nextConfig) => {
+      this.config = nextConfig;
+      this.compoundToElements = this.buildCompoundToElements();
+      this.reactionMap = this.buildReactionMap();
+    });
+  }
+
+  /**
+   * 判断物质是否在配置的常见物质列表中
+   */
+  isKnownCompound(compound) {
+    return Boolean(this.compoundToElements[compound]);
   }
 
   /**
@@ -49,7 +58,7 @@ class ChemistryDatabase {
       }
     };
 
-    addCompounds(db.common_compounds);
+    addCompounds(this.config.common_compounds || {});
     return compounds;
   }
 
@@ -67,7 +76,7 @@ class ChemistryDatabase {
       matches.forEach(element => {
         if (element && element.length <= 2) {
           // 验证是否为有效的元素符号
-          if (db.metadata.elements.includes(element) ||
+          if (this.config.metadata?.elements?.includes(element) ||
               Object.keys(this.getSpecialCards()).includes(element)) {
             elements.add(element);
           }
@@ -82,11 +91,7 @@ class ChemistryDatabase {
    * 获取特殊卡牌
    */
   getSpecialCards() {
-    return {
-      'He': 'reverse', 'Ne': 'reverse', 'Ar': 'reverse', 'Kr': 'reverse',
-      'Au': 'skip',
-      '+4': 'draw4', '+2': 'draw2'
-    };
+    return configService.getSpecialCards();
   }
 
   /**
@@ -95,35 +100,19 @@ class ChemistryDatabase {
   buildReactionMap() {
     const map = new Map();
 
-    if (db.representative_reactions && Array.isArray(db.representative_reactions)) {
-      db.representative_reactions.forEach(reactionType => {
-        if (reactionType.reactions && Array.isArray(reactionType.reactions)) {
-          reactionType.reactions.forEach(reaction => {
-            // 从反应式中提取物质
-            const parts = reaction.split('→');
-            if (parts.length >= 2) {
-              const reactants = parts[0].trim().split('+').map(s => s.trim());
-              const products = parts[1].trim().split('+').map(s => s.trim().replace('↓', '').replace('↑', '').trim());
-
-              // 存储双向反应关系
-              reactants.forEach(r1 => {
-                reactants.forEach(r2 => {
-                  if (r1 !== r2) {
-                    const key = `${r1}|${r2}`;
-                    if (!map.has(key)) {
-                      map.set(key, []);
-                    }
-                    map.get(key).push({
-                      type: reactionType.type,
-                      reaction: reaction
-                    });
-                  }
-                });
-              });
-            }
+    if (this.config.representative_reactions && typeof this.config.representative_reactions === 'object') {
+      // 新格式：{ "HCl": ["NaOH", "Ca(OH)2"], ... }
+      for (const [reactant, partners] of Object.entries(this.config.representative_reactions)) {
+        const normalizedReactant = reactant.replace(/[↓↑]/g, '').trim();
+        
+        if (Array.isArray(partners)) {
+          partners.forEach(partner => {
+            const normalizedPartner = partner.replace(/[↓↑]/g, '').trim();
+            const key = `${normalizedReactant}|${normalizedPartner}`;
+            map.set(key, true);
           });
         }
-      });
+      }
     }
 
     return map;
@@ -133,7 +122,7 @@ class ChemistryDatabase {
    * 检查两个物质是否能反应
    * @param {string} compound1
    * @param {string} compound2
-   * @returns {object|null} 反应信息或null
+   * @returns {boolean} 能否反应
    */
   getReactionBetweenCompounds(compound1, compound2) {
     // 规范化物质名称（移除箭头、向上箭头等符号）
@@ -141,18 +130,11 @@ class ChemistryDatabase {
     const c1 = normalize(compound1);
     const c2 = normalize(compound2);
 
+    // 检查双向反应
     const key = `${c1}|${c2}`;
-    if (this.reactionMap.has(key)) {
-      return this.reactionMap.get(key)[0];
-    }
-
-    // 也检查反向
     const reverseKey = `${c2}|${c1}`;
-    if (this.reactionMap.has(reverseKey)) {
-      return this.reactionMap.get(reverseKey)[0];
-    }
-
-    return null;
+    
+    return this.reactionMap.has(key) || this.reactionMap.has(reverseKey);
   }
 
   /**
@@ -165,8 +147,9 @@ class ChemistryDatabase {
     const possibleCompounds = [];
 
     for (const [compound, requiredElements] of Object.entries(this.compoundToElements)) {
-      // 检查是否所有必需的元素都在玩家的元素中
-      if (requiredElements.every(elem => elementSet.has(elem))) {
+      // 检查是否至少有一个必需的元素在玩家的元素中
+      // 这样玩家打出 H 时可以看到所有含 H 的物质
+      if (requiredElements.some(elem => elementSet.has(elem))) {
         possibleCompounds.push(compound);
       }
     }
@@ -191,7 +174,7 @@ class ChemistryDatabase {
    * @returns {string} 类别名称
    */
   getCompoundCategory(compound) {
-    for (const [category, items] of Object.entries(db.common_compounds)) {
+    for (const [category, items] of Object.entries(this.config.common_compounds || {})) {
       if (Array.isArray(items) && items.includes(compound)) {
         return category;
       }

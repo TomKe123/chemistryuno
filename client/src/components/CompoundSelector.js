@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { formatFormula } from '../utils/chemistryFormatter';
 import './CompoundSelector.css';
+
 
 const CompoundSelector = ({ compounds, selectedCard, onSelect, onClose }) => {
   const [filteredCompounds, setFilteredCompounds] = useState(compounds);
@@ -41,7 +42,7 @@ const CompoundSelector = ({ compounds, selectedCard, onSelect, onClose }) => {
                 className="compound-btn"
                 onClick={() => onSelect(compound)}
               >
-                <div className="compound-name">{compound}</div>
+                <div className="compound-name">{formatFormula(compound)}</div>
               </button>
             ))}
           </div>

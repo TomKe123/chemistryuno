@@ -1,31 +1,18 @@
-const fs = require('fs');
-const path = require('path');
-
-// 读取db.json
-const dbPath = path.join(__dirname, '../db.json');
-const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+const configService = require('./configService');
 
 /**
  * 游戏规则引擎
  */
 class GameRules {
-  // 元素牌数量
-  static ELEMENT_COUNTS = {
-    'H': 12, 'O': 12,
-    'C': 4, 'N': 4, 'F': 4, 'Na': 4, 'Mg': 4, 'Al': 4, 'Si': 4, 'P': 4,
-    'S': 4, 'Cl': 4, 'K': 4, 'Ca': 4, 'Mn': 4, 'Fe': 4, 'Cu': 4, 'Zn': 4,
-    'Br': 4, 'I': 4, 'Ag': 4,
-    '+4': 4, '+2': 8,
-    'He': 1, 'Ne': 1, 'Ar': 1, 'Kr': 1,
-    'Au': 4
-  };
+  // 元素牌数量（动态读取配置）
+  static get ELEMENT_COUNTS() {
+    return configService.getElementCounts();
+  }
 
-  // 特殊卡牌功能映射
-  static SPECIAL_CARDS = {
-    'He': 'reverse', 'Ne': 'reverse', 'Ar': 'reverse', 'Kr': 'reverse',
-    'Au': 'skip',
-    '+4': 'draw4', '+2': 'draw2'
-  };
+  // 特殊卡牌功能映射（动态读取配置）
+  static get SPECIAL_CARDS() {
+    return configService.getSpecialCards();
+  }
 
   // 获取所有卡牌类型
   static getAllCardTypes() {
@@ -130,7 +117,8 @@ class GameRules {
         break;
 
       case 'skip':
-        this.skipNextPlayer(gameState);
+        // 设置跳过标记，由nextPlayer处理
+        gameState.shouldSkipNext = true;
         gameState.history.push({
           action: 'skip',
           card: card,
@@ -192,8 +180,17 @@ class GameRules {
    */
   static nextPlayer(gameState) {
     const playerCount = gameState.players.length;
+    
+    // 先移到下一个玩家
     gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
     gameState.turnCount++;
+    
+    // 检查是否需要跳过当前玩家（skip卡效果）
+    if (gameState.shouldSkipNext) {
+      console.log(`跳过玩家${gameState.currentPlayer}`);
+      gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
+      gameState.shouldSkipNext = false;
+    }
     
     // 检查是否有累加的抽牌需要结算
     if (gameState.pendingDraws > 0) {
@@ -202,7 +199,7 @@ class GameRules {
       // 检查当前玩家是否有+2或+4卡可以继续累加
       const hasDrawCard = currentPlayer.hand.some(card => card === '+2' || card === '+4');
       
-      // 如果没有加牌卡，则结算累加的抽牌
+      // 如果没有加牌卡，则结算累加的抽牌，并再次跳到下一个玩家
       if (!hasDrawCard) {
         console.log(`玩家${gameState.currentPlayer}无法继续累加，抽${gameState.pendingDraws}张牌`);
         for (let i = 0; i < gameState.pendingDraws; i++) {
@@ -212,7 +209,7 @@ class GameRules {
         }
         gameState.pendingDraws = 0;
         
-        // 抽牌后跳过该玩家
+        // 抽牌后跳过该玩家，再移到下一个
         gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
       }
     }
