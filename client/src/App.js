@@ -1,20 +1,69 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import io from 'socket.io-client';
 import GameLobby from './components/GameLobby';
 import GameBoard from './components/GameBoard';
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
+import Setup from './components/Setup';
 import './App.css';
 import { SOCKET_URL } from './config/api';
+import API_ENDPOINTS from './config/api';
 
 const App = () => {
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
   const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+  const isSetupRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/setup');
   const adminPassword = process.env.REACT_APP_ADMIN || '';
   const [adminAuthed, setAdminAuthed] = useState(() => sessionStorage.getItem('adminAuthed') === 'true');
+
+  // 检查是否需要初始化设置
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const response = await axios.get(API_ENDPOINTS.checkSetup);
+        setNeedsSetup(!response.data.isSetup);
+        setCheckingSetup(false);
+        
+        // 如果需要设置且不在设置页面，跳转到设置页面
+        if (!response.data.isSetup && !isSetupRoute) {
+          window.location.href = '/setup';
+        }
+      } catch (error) {
+        console.error('检查设置状态失败:', error);
+        setCheckingSetup(false);
+      }
+    };
+
+    checkSetup();
+  }, [isSetupRoute]);
 
   useEffect(() => {
     sessionStorage.setItem('adminAuthed', adminAuthed ? 'true' : 'false');
   }, [adminAuthed]);
+
+  // 正在检查设置状态
+  if (checkingSetup) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '18px'
+      }}>
+        检查系统状态...
+      </div>
+    );
+  }
+
+  // 显示设置页面
+  if (isSetupRoute || needsSetup) {
+    return <Setup onComplete={() => setNeedsSetup(false)} />;
+  }
 
   if (isAdminRoute) {
     return adminAuthed ? (

@@ -492,6 +492,87 @@ app.get('/api/config', (req, res) => {
   res.json({ config: configService.getConfig() });
 });
 
+// 检查是否已完成初始化设置
+app.get('/api/setup/check', (req, res) => {
+  const adminPassword = process.env.REACT_APP_ADMIN;
+  const isSetup = adminPassword && adminPassword !== 'your_admin_password_here' && adminPassword.length > 0;
+  res.json({ isSetup });
+});
+
+// 初始化设置 - 保存管理员密码
+app.post('/api/setup', (req, res) => {
+  const { adminPassword } = req.body;
+
+  if (!adminPassword || adminPassword.length < 6) {
+    return res.status(400).json({ error: '密码长度至少6位' });
+  }
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // 读取 .env 文件路径
+    const envPath = path.join(__dirname, '..', '.env');
+    const envExamplePath = path.join(__dirname, '..', '.env.example');
+    
+    let envContent = '';
+    
+    // 如果 .env 不存在，从 .env.example 复制
+    if (!fs.existsSync(envPath)) {
+      if (fs.existsSync(envExamplePath)) {
+        envContent = fs.readFileSync(envExamplePath, 'utf8');
+      } else {
+        // 创建默认 .env 内容
+        envContent = `# 化学UNO - 环境变量配置
+NODE_ENV=production
+PORT=5000
+REACT_APP_API_URL=http://localhost:5000
+REACT_APP_ADMIN=${adminPassword}
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+LOG_LEVEL=info
+MAX_PLAYERS=12
+GAME_TIMEOUT=3600000
+CONFIG_PATH=./config.json
+`;
+      }
+    } else {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+
+    // 更新或添加 REACT_APP_ADMIN
+    const lines = envContent.split('\n');
+    let found = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith('REACT_APP_ADMIN=')) {
+        lines[i] = `REACT_APP_ADMIN=${adminPassword}`;
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found) {
+      lines.push(`REACT_APP_ADMIN=${adminPassword}`);
+    }
+    
+    // 写入 .env 文件
+    fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+    
+    console.log('✅ 管理员密码已保存到 .env 文件');
+    
+    // 更新当前进程的环境变量（仅对当前请求有效，下次启动才完全生效）
+    process.env.REACT_APP_ADMIN = adminPassword;
+    
+    res.json({ 
+      success: true, 
+      message: '设置已保存，页面将自动刷新' 
+    });
+  } catch (error) {
+    console.error('❌ 保存设置失败:', error);
+    res.status(500).json({ error: '保存失败: ' + error.message });
+  }
+});
+
 // 刷新配置（从磁盘重新加载）
 app.post('/api/config/refresh', (req, res) => {
   try {
