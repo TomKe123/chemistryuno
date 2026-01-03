@@ -76,12 +76,46 @@ const AdminPanel = () => {
         });
       }
       
+      // 确保 game_settings 存在
+      if (!loadedConfig.game_settings) {
+        console.warn('⚠️ 配置中没有 game_settings，正在创建默认值');
+        loadedConfig.game_settings = {
+          reconnect_timeout: 30000,
+          host_timeout: 30000,
+          note: "reconnect_timeout: 普通玩家断线后保留位置的时间（毫秒），host_timeout: 房主断线后关闭房间的时间（毫秒）"
+        };
+      }
+      
       setConfig(loadedConfig);
       setDraft(deepClone(loadedConfig));
       setLastSavedAt(new Date());
     } catch (err) {
       console.error('❌ 加载配置失败:', err);
       setError(err.response?.data?.error || '加载配置失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshFromDisk = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      console.log('🔄 从磁盘刷新配置...');
+      const res = await axios.post(API_ENDPOINTS.configRefresh);
+      const loadedConfig = res.data.config;
+      
+      console.log('✅ 配置已刷新:', loadedConfig);
+      console.log('🧪 单质列表:', loadedConfig.elemental_substances);
+      
+      setConfig(loadedConfig);
+      setDraft(deepClone(loadedConfig));
+      setLastSavedAt(new Date());
+      setMessage('配置已从磁盘重新加载');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('❌ 刷新配置失败:', err);
+      setError(err.response?.data?.error || '刷新配置失败');
     } finally {
       setLoading(false);
     }
@@ -97,21 +131,76 @@ const AdminPanel = () => {
     if (!draft) return;
     console.log('💾 开始保存配置...');
     
-    // 清理 representative_reactions 中的空行
-    const cleanedDraft = {
-      ...draft,
-      representative_reactions: Object.fromEntries(
-        Object.entries(draft.representative_reactions || {}).map(([reactant, partners]) => {
-          // 过滤掉空行和只有空格的行
-          const cleanedPartners = Array.isArray(partners) 
-            ? partners.map(p => p.trim()).filter(Boolean)
-            : [];
-          return [reactant, cleanedPartners];
-        })
-      )
-    };
+    // 深拷贝以便清理
+    const cleanedDraft = deepClone(draft);
     
+    // 清理 common_compounds：将字符串转为数组
+    if (cleanedDraft.common_compounds) {
+      Object.keys(cleanedDraft.common_compounds).forEach(category => {
+        const value = cleanedDraft.common_compounds[category];
+        if (typeof value === 'string') {
+          cleanedDraft.common_compounds[category] = value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // 嵌套对象
+          Object.keys(value).forEach(sub => {
+            if (typeof value[sub] === 'string') {
+              value[sub] = value[sub]
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            }
+          });
+        }
+      });
+    }
+    
+    // 清理 elemental_substances：将字符串转为数组
+    if (cleanedDraft.elemental_substances) {
+      Object.keys(cleanedDraft.elemental_substances).forEach(category => {
+        if (category === 'note') return; // 跳过 note 字段
+        
+        const value = cleanedDraft.elemental_substances[category];
+        if (typeof value === 'string') {
+          cleanedDraft.elemental_substances[category] = value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // 嵌套对象
+          Object.keys(value).forEach(sub => {
+            if (typeof value[sub] === 'string') {
+              value[sub] = value[sub]
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            }
+          });
+        }
+      });
+    }
+    
+    // 清理 representative_reactions 中的空行
+    cleanedDraft.representative_reactions = Object.fromEntries(
+      Object.entries(cleanedDraft.representative_reactions || {}).map(([reactant, partners]) => {
+        const cleanedPartners = Array.isArray(partners) 
+          ? partners.map(p => p.trim()).filter(Boolean)
+          : (typeof partners === 'string' 
+              ? partners.split(',').map(p => p.trim()).filter(Boolean)
+              : []);
+        return [reactant, cleanedPartners];
+      })
+    );
+    
+    console.log('  - elemental_substances 存在:', !!cleanedDraft.elemental_substances);
+    if (cleanedDraft.elemental_substances) {
+      console.log('  - metal_elements:', cleanedDraft.elemental_substances.metal_elements?.length, '项');
+      console.log('  - non_metal_elements:', Object.keys(cleanedDraft.elemental_substances.non_metal_elements || {}).length, '个类别');
+    }
     console.log('  反应数量:', Object.keys(cleanedDraft.representative_reactions || {}).length);
+    
     setSaving(true);
     setMessage('');
     setError('');
@@ -163,13 +252,26 @@ const AdminPanel = () => {
   };
 
   const updateCompoundList = (path, textValue) => {
-    const list = textValue
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+    // 保存原始文本，不立即解析，避免输入逗号时被过滤掉
     setDraft((prev) => {
       const next = deepClone(prev);
+      
+      // 确保 elemental_substances 和 common_compounds 存在
+      if (!next.elemental_substances) {
+        next.elemental_substances = {
+          non_metal_elements: {
+            diatomic_molecules: [],
+            polyatomic_molecules: [],
+            atomic_crystals: [],
+            noble_gases: []
+          },
+          metal_elements: [],
+          note: "单质分为金属单质、非金属单质和稀有气体单质"
+        };
+      }
+      if (!next.common_compounds) {
+        next.common_compounds = {};
+      }
       
       // 如果路径第一个是 elemental_substances，从那里开始
       let cursor = path[0] === 'elemental_substances' ? next.elemental_substances : next.common_compounds;
@@ -177,10 +279,16 @@ const AdminPanel = () => {
       
       for (let i = startIndex; i < path.length - 1; i += 1) {
         const key = path[i];
-        cursor[key] = cursor[key] || {};
+        if (!cursor[key]) {
+          cursor[key] = {};
+        }
         cursor = cursor[key];
       }
-      cursor[path[path.length - 1]] = list;
+      
+      const lastKey = path[path.length - 1];
+      // 直接保存原始文本，不做任何处理
+      cursor[lastKey] = textValue;
+      
       return next;
     });
   };
@@ -267,7 +375,9 @@ const AdminPanel = () => {
         </div>
         <div className="header-actions">
           <a className="ghost-btn" href="/">返回游戏</a>
-          <button className="ghost-btn" onClick={fetchConfig} disabled={loading || saving}>重新加载</button>
+          <button className="ghost-btn" onClick={handleRefreshFromDisk} disabled={loading || saving} title="从config.json重新加载配置">
+            {loading ? '加载中...' : '刷新配置'}
+          </button>
           <button className="ghost-btn" onClick={resetDraft} disabled={saving || !hasChanges}>重置更改</button>
           <button className="primary-btn" onClick={handleSave} disabled={saving || !hasChanges}>
             {saving ? '保存中...' : hasChanges ? '保存配置' : '无更改'}
@@ -297,6 +407,63 @@ const AdminPanel = () => {
       {error && <div className="notice error">{error}</div>}
 
       <div className="admin-grid">
+        <section className="admin-card">
+          <div className="section-header">
+            <h2>游戏设置</h2>
+            <span className="section-desc">配置游戏基本参数</span>
+          </div>
+          <div className="settings-group">
+            <div className="setting-item">
+              <label>
+                <span className="setting-label">玩家断线保留时间</span>
+                <span className="setting-hint">普通玩家断线后保留位置的时间（秒）</span>
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="300"
+                step="5"
+                value={draft.game_settings?.reconnect_timeout ? draft.game_settings.reconnect_timeout / 1000 : 30}
+                onChange={(e) => {
+                  const seconds = Number(e.target.value);
+                  setDraft((prev) => ({
+                    ...prev,
+                    game_settings: {
+                      ...prev.game_settings,
+                      reconnect_timeout: seconds * 1000
+                    }
+                  }));
+                }}
+              />
+              <span className="setting-unit">秒</span>
+            </div>
+            <div className="setting-item">
+              <label>
+                <span className="setting-label">房主断线关闭房间时间</span>
+                <span className="setting-hint">房主断线后自动关闭房间的时间（秒）</span>
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="300"
+                step="5"
+                value={draft.game_settings?.host_timeout ? draft.game_settings.host_timeout / 1000 : 30}
+                onChange={(e) => {
+                  const seconds = Number(e.target.value);
+                  setDraft((prev) => ({
+                    ...prev,
+                    game_settings: {
+                      ...prev.game_settings,
+                      host_timeout: seconds * 1000
+                    }
+                  }));
+                }}
+              />
+              <span className="setting-unit">秒</span>
+            </div>
+          </div>
+        </section>
+
         <section className="admin-card">
           <div className="section-header">
             <h2>卡牌与数量</h2>
@@ -393,7 +560,7 @@ const AdminPanel = () => {
                   <div key={category} className="compound-block">
                     <div className="compound-title">{category}</div>
                     <textarea
-                      value={value.join(', ')}
+                      value={typeof value === 'string' ? value : value.join(', ')}
                       onChange={(e) => updateCompoundList([category], e.target.value)}
                       rows={4}
                     />
@@ -409,7 +576,7 @@ const AdminPanel = () => {
                       <div key={`${category}-${sub}`} className="compound-subblock">
                         <div className="compound-subtitle">{sub}</div>
                         <textarea
-                          value={Array.isArray(list) ? list.join(', ') : ''}
+                          value={typeof list === 'string' ? list : (Array.isArray(list) ? list.join(', ') : '')}
                           onChange={(e) => updateCompoundList(['elemental_substances', category, sub], e.target.value)}
                           rows={3}
                         />
@@ -444,7 +611,7 @@ const AdminPanel = () => {
                   <div key={category} className="compound-block">
                     <div className="compound-title">{category}</div>
                     <textarea
-                      value={value.join(', ')}
+                      value={typeof value === 'string' ? value : value.join(', ')}
                       onChange={(e) => updateCompoundList(['elemental_substances', category], e.target.value)}
                       rows={4}
                       placeholder="输入单质，用逗号分隔"
@@ -461,7 +628,7 @@ const AdminPanel = () => {
                       <div key={`elemental-${category}-${sub}`} className="compound-subblock">
                         <div className="compound-subtitle">{sub}</div>
                         <textarea
-                          value={Array.isArray(list) ? list.join(', ') : ''}
+                          value={typeof list === 'string' ? list : (Array.isArray(list) ? list.join(', ') : '')}
                           onChange={(e) => updateCompoundList(['elemental_substances', category, sub], e.target.value)}
                           rows={3}
                           placeholder="输入单质，用逗号分隔"

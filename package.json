@@ -1,6 +1,6 @@
 {
   "name": "chemistry-uno",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "一个将化学知识融入的创意卡牌游戏",
   "main": "server/index.js",
   "scripts": {
@@ -8,11 +8,18 @@
     "server": "cd server && npm start",
     "client": "cd client && npm start",
     "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "build": "cd client && npm run build",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "clean": "rm -rf server/node_modules client/node_modules server/package-lock.json client/package-lock.json",
     "update": "cd server && npm update && cd ../client && npm update",
     "audit": "cd server && npm audit && cd ../client && npm audit",
-    "audit-fix": "cd server && npm audit fix && cd ../client && npm audit fix"
+    "audit-fix": "cd server && npm audit fix && cd ../client && npm audit fix",
+    "health": "node healthcheck.js",
+    "docker:build": "docker-compose -f docker-compose.production.yml build",
+    "docker:up": "docker-compose -f docker-compose.production.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.production.yml down",
+    "docker:logs": "docker-compose -f docker-compose.production.yml logs -f",
+    "docker:restart": "docker-compose -f docker-compose.production.yml restart"
   },
   "keywords": [
     "chemistry",

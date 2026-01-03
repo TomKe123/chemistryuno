@@ -133,7 +133,60 @@ Content-Type: application/json
 }
 ```
 
-#### 4. 获取游戏统计
+#### 4. 获取二维码
+```
+GET /api/qrcode?url=<网址>
+
+响应：
+返回二维码图片 (PNG格式)
+```
+
+#### 5. 获取游戏配置
+```
+GET /api/config
+
+响应：
+{
+  "metadata": { ... },
+  "card_config": { ... },
+  "substances": { ... },
+  "reactions": { ... }
+}
+```
+
+#### 6. 保存游戏配置（管理员）
+```
+POST /api/config
+Content-Type: application/json
+
+请求体：
+{
+  "metadata": { ... },
+  "card_config": { ... },
+  "substances": { ... },
+  "reactions": { ... }
+}
+
+响应：
+{
+  "success": true,
+  "message": "配置已保存"
+}
+```
+
+#### 7. 获取移动端访问信息
+```
+GET /api/mobile-info
+
+响应：
+{
+  "localIP": "192.168.1.100",
+  "port": 5000,
+  "accessURL": "http://192.168.1.100:3000"
+}
+```
+
+#### 8. 获取游戏统计
 ```
 GET /api/game/:gameId/stats
 
@@ -400,7 +453,7 @@ static isWinner(player: object): boolean
 ## 扩展建议
 
 ### 1. 增强物质库
-修改 `db.json` 的 `common_compounds` 和 `representative_reactions` 部分，添加更多化学物质和反应。
+修改 `config.json` 的 `substances` 和 `reactions` 部分，添加更多化学物质和反应。也可以通过管理面板 (`/admin`) 进行可视化编辑。
 
 ### 2. AI玩家
 在 `GameRules` 中添加 AI 决策逻辑：
@@ -421,32 +474,38 @@ class AIPlayer {
 ### 5. 重放系统
 使用 `gameState.history` 实现游戏回放。
 
-## 调试技巧
+## 新增功能说明 (2026年1月)
 
-### 后端调试
-```javascript
-// 在 index.js 中添加
-console.log('游戏状态:', gameState);
-console.log('玩家手牌:', gameState.players[playerId].hand);
-console.log('反应验证:', database.getReactionBetweenCompounds(c1, c2));
-```
+### 移动端支持
+- **API配置文件**: `client/src/config/api.js` 自动检测访问设备
+- **二维码生成**: `/api/qrcode` 端点生成房间二维码
+- **移动端优化**: 触摸事件优化，响应式布局
 
-### 前端调试
-```javascript
-// 在 GameBoard.js 中添加
-console.log('当前游戏状态:', gameState);
-console.log('可能的物质:', compounds);
-console.log('是否是当前玩家:', isCurrentPlayer);
-```
+### 管理面板
+- **路由**: `/admin` 访问管理面板
+- **认证**: 使用环境变量 `REACT_APP_ADMIN` 设置密码
+- **功能**: 
+  - 查看和编辑反应规则
+  - 添加/删除反应物及其可反应物质
+  - 实时保存配置到 `config.json`
 
-### 数据库调试
-```javascript
-// 在 database.js 中测试
-const db = require('./database');
-console.log(db.getCompoundsByElements(['H', 'O']));
-console.log(db.getReactionBetweenCompounds('H2O', 'NaCl'));
-```
+### 配置系统
+- **配置服务**: `server/configService.js` 管理配置加载/保存
+- **配置文件**: `config.json` 存储所有游戏配置
+- **实时更新**: 配置修改后立即生效，无需重启服务器
+
+### 观战模式
+- **断线重连**: 玩家断线后可重新连接，恢复游戏状态
+- **观战者**: 新玩家加入已开始的游戏时，自动转为观战者
+
+### 辅助功能
+- **昵称记忆**: 使用 sessionStorage 自动保存玩家昵称
+- **服务器状态页**: 访问 `http://localhost:5000` 查看服务器状态
+- **化学式格式化**: `client/src/utils/chemistryFormatter.js` 美化化学式显示
 
 ---
 
-**需要帮助？** 请参考主 README.md 或查看示例代码。
+**需要帮助？** 请参考：
+- [管理面板指南](ADMIN_PANEL_GUIDE.md)
+- [移动端访问指南](MOBILE_ACCESS_GUIDE.md)
+- [主 README.md](../README.md)

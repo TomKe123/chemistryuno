@@ -8,11 +8,21 @@ class ChemistryDatabase {
     this.config = configService.getConfig();
     this.compoundToElements = this.buildCompoundToElements();
     this.reactionMap = this.buildReactionMap();
+    
+    console.log('🧪 Chemistry Database 初始化');
+    console.log('  - 已加载物质数量:', Object.keys(this.compoundToElements).length);
+    console.log('  - elemental_substances 存在:', !!this.config.elemental_substances);
+    if (this.config.elemental_substances) {
+      const elementToSimple = this.getElementToSimpleSubstance();
+      console.log('  - 单质映射数量:', Object.keys(elementToSimple).length);
+      console.log('  - 单质示例:', Object.entries(elementToSimple).slice(0, 5));
+    }
 
     configService.onChange((nextConfig) => {
       this.config = nextConfig;
       this.compoundToElements = this.buildCompoundToElements();
       this.reactionMap = this.buildReactionMap();
+      console.log('🔄 配置已更新，重新构建数据库');
     });
   }
 
@@ -58,7 +68,24 @@ class ChemistryDatabase {
       }
     };
 
+    // 添加化合物
     addCompounds(this.config.common_compounds || {});
+    
+    // 添加单质
+    if (this.config.elemental_substances) {
+      const elementalSubstances = this.config.elemental_substances;
+      
+      // 添加金属单质
+      if (Array.isArray(elementalSubstances.metal_elements)) {
+        compounds.push(...elementalSubstances.metal_elements);
+      }
+      
+      // 添加非金属单质
+      if (elementalSubstances.non_metal_elements) {
+        addCompounds(elementalSubstances.non_metal_elements);
+      }
+    }
+    
     return compounds;
   }
 
@@ -138,32 +165,88 @@ class ChemistryDatabase {
   }
 
   /**
-   * 获取元素对应的单质映射
+   * 获取元素对应的单质映射（从配置动态生成）
    */
   getElementToSimpleSubstance() {
-    return {
-      'H': 'H2',
-      'O': 'O2',
-      'N': 'N2',
-      'Cl': 'Cl2',
-      'F': 'F2',
-      'Br': 'Br2',
-      'I': 'I2',
-      'P': 'P4',
-      'S': 'S8',
-      'C': 'C',
-      'Fe': 'Fe',
-      'Cu': 'Cu',
-      'Zn': 'Zn',
-      'Al': 'Al',
-      'Mg': 'Mg',
-      'Ca': 'Ca',
-      'Na': 'Na',
-      'K': 'K',
-      'Ag': 'Ag',
-      'Mn': 'Mn',
-      'Si': 'Si'
-    };
+    const mapping = {};
+    
+    // 如果配置中有 elemental_substances，从配置中读取
+    if (this.config.elemental_substances) {
+      const elemental = this.config.elemental_substances;
+      
+      // 处理非金属单质
+      if (elemental.non_metal_elements) {
+        const nonMetals = elemental.non_metal_elements;
+        
+        // 双原子分子：H2, O2, N2, F2, Cl2, Br2, I2
+        if (Array.isArray(nonMetals.diatomic_molecules)) {
+          nonMetals.diatomic_molecules.forEach(molecule => {
+            const element = molecule.replace(/\d+/g, ''); // 去除数字，如 H2 -> H
+            if (element) {
+              mapping[element] = molecule;
+            }
+          });
+        }
+        
+        // 多原子分子：P4, S8
+        if (Array.isArray(nonMetals.polyatomic_molecules)) {
+          nonMetals.polyatomic_molecules.forEach(molecule => {
+            const element = molecule.replace(/\d+/g, '');
+            if (element) {
+              mapping[element] = molecule;
+            }
+          });
+        }
+        
+        // 原子晶体：C, Si（元素符号本身就是单质）
+        if (Array.isArray(nonMetals.atomic_crystals)) {
+          nonMetals.atomic_crystals.forEach(element => {
+            mapping[element] = element;
+          });
+        }
+        
+        // 稀有气体：He, Ne, Ar, Kr（元素符号本身就是单质）
+        if (Array.isArray(nonMetals.noble_gases)) {
+          nonMetals.noble_gases.forEach(element => {
+            mapping[element] = element;
+          });
+        }
+      }
+      
+      // 处理金属单质（元素符号本身就是单质）
+      if (Array.isArray(elemental.metal_elements)) {
+        elemental.metal_elements.forEach(element => {
+          mapping[element] = element;
+        });
+      }
+    } else {
+      // 回退到硬编码（向后兼容）
+      return {
+        'H': 'H2',
+        'O': 'O2',
+        'N': 'N2',
+        'Cl': 'Cl2',
+        'F': 'F2',
+        'Br': 'Br2',
+        'I': 'I2',
+        'P': 'P4',
+        'S': 'S8',
+        'C': 'C',
+        'Fe': 'Fe',
+        'Cu': 'Cu',
+        'Zn': 'Zn',
+        'Al': 'Al',
+        'Mg': 'Mg',
+        'Ca': 'Ca',
+        'Na': 'Na',
+        'K': 'K',
+        'Ag': 'Ag',
+        'Mn': 'Mn',
+        'Si': 'Si'
+      };
+    }
+    
+    return mapping;
   }
 
   /**

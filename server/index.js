@@ -219,6 +219,15 @@ const socketToPlayer = new Map(); // socketId -> {roomCode, playerId, playerName
 const pendingCleanup = new Map(); // roomCode -> {playerIndex, timeoutId} 存储待清理的玩家和超时
 const playerToRoom = new Map(); // playerName -> {roomCode, playerId, joinTime} 玩家昵称到房间的映射
 
+// 获取游戏设置
+function getGameSettings() {
+  const config = configService.getConfig();
+  return config.game_settings || {
+    reconnect_timeout: 30000,
+    host_timeout: 30000
+  };
+}
+
 // 生成6位房间号
 function generateRoomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -481,6 +490,18 @@ app.post('/api/compounds', (req, res) => {
 // 路由：获取/更新可编辑配置（卡牌、物质、反应规则）
 app.get('/api/config', (req, res) => {
   res.json({ config: configService.getConfig() });
+});
+
+// 刷新配置（从磁盘重新加载）
+app.post('/api/config/refresh', (req, res) => {
+  try {
+    const refreshedConfig = configService.refreshFromDisk();
+    console.log('🔄 配置已从磁盘刷新');
+    res.json({ success: true, config: refreshedConfig });
+  } catch (err) {
+    console.error('❌ 刷新配置失败:', err);
+    res.status(500).json({ error: '刷新配置失败: ' + err.message });
+  }
 });
 
 app.put('/api/config', (req, res) => {
@@ -896,11 +917,12 @@ io.on('connection', (socket) => {
     
     // 如果是房主离开，设置30秒后关闭房间
     if (isHost) {
-      console.log(`✗ 房主 ${playerName} 离开，30秒后将关闭房间 ${roomCode}`);
+      const settings = getGameSettings();
+      console.log(`✗ 房主 ${playerName} 离开，${settings.host_timeout / 1000}秒后将关闭房间 ${roomCode}`);
       
-      // 设置30秒后关闭房间的超时
+      // 设置超时后关闭房间
       const timeoutId = setTimeout(() => {
-        console.log(`⏱️ 30秒超时，关闭房间 ${roomCode}`);
+        console.log(`⏱️ ${settings.host_timeout / 1000}秒超时，关闭房间 ${roomCode}`);
         
         const currentGameState = gameSessions.get(roomCode);
         if (!currentGameState) return;
@@ -926,7 +948,7 @@ io.on('connection', (socket) => {
         pendingCleanup.delete(roomCode);
         
         console.log(`✓ 房间 ${roomCode} 已关闭`);
-      }, 30000); // 30秒
+      }, settings.host_timeout);
       
       // 保存超时ID用于可能的取消
       pendingCleanup.set(roomCode, {
@@ -958,9 +980,10 @@ io.on('connection', (socket) => {
       
       socketToPlayer.delete(socket.id);
       
-      // 设置30秒后释放昵称的超时
+      const settings = getGameSettings();
+      // 设置超时后释放昵称
       const timeoutId = setTimeout(() => {
-        console.log(`⏱️ 30秒超时，释放玩家昵称 ${playerName}`);
+        console.log(`⏱️ ${settings.reconnect_timeout / 1000}秒超时，释放玩家昵称 ${playerName}`);
         
         const currentGameState = gameSessions.get(roomCode);
         if (!currentGameState) {
@@ -1000,7 +1023,7 @@ io.on('connection', (socket) => {
         broadcastGameStateToAll(io, roomCode, currentGameState);
         
         console.log(`✓ 玩家昵称 ${playerName} 已释放`);
-      }, 30000); // 30秒
+      }, settings.reconnect_timeout);
       
       // 保存超时ID用于可能的取消
       pendingCleanup.set(`${roomCode}:${playerId}`, {

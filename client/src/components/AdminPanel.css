@@ -216,6 +216,49 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
 }
 
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-item label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-label {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.setting-hint {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.setting-item input {
+  width: 120px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.setting-unit {
+  color: #64748b;
+  font-size: 13px;
+  margin-left: 8px;
+}
+
 .inline-form {
   display: flex;
   flex-direction: column;

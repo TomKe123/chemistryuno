@@ -25,6 +25,11 @@
     ],
     "note": "这是一个简化示例，仅包含常见无机物和代表性反应"
   },
+  "game_settings": {
+    "reconnect_timeout": 30000,
+    "host_timeout": 30000,
+    "note": "reconnect_timeout: 普通玩家断线后保留位置的时间（毫秒），host_timeout: 房主断线后关闭房间的时间（毫秒）"
+  },
   "card_config": {
     "element_counts": {
       "H": 12,
@@ -79,7 +84,9 @@
       ],
       "polyatomic_molecules": [
         "P4",
-        "S8"
+        "S8",
+        "P",
+        "S"
       ],
       "atomic_crystals": [
         "C",
@@ -336,13 +343,16 @@
       "Fe",
       "Mg",
       "P4",
+      "P",
+      "S",
       "Cu"
     ],
     "N2": [
       "H2"
     ],
     "H2": [
-      "N2"
+      "N2",
+      "O2"
     ],
     "SO2": [
       "H2O"

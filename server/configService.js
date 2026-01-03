@@ -3,7 +3,6 @@ const path = require('path');
 const EventEmitter = require('events');
 
 const CONFIG_PATH = path.join(__dirname, '../config.json');
-const LEGACY_DB_PATH = path.join(__dirname, '../db.json');
 
 // 默认卡牌配置，作为缺失字段时的兜底
 const DEFAULT_CARD_CONFIG = {
@@ -60,8 +59,8 @@ function readJson(filePath) {
 }
 
 function loadInitialConfig() {
-  // 优先使用 config.json，其次尝试 legacy db.json，最后回退到内置默认值
-  const configFromFile = readJson(CONFIG_PATH) || readJson(LEGACY_DB_PATH);
+  // 读取 config.json，不存在则使用内置默认值
+  const configFromFile = readJson(CONFIG_PATH);
   if (configFromFile) {
     return applyDefaults(configFromFile);
   }
@@ -123,8 +122,22 @@ class ConfigService extends EventEmitter {
     if (!newConfig || typeof newConfig !== 'object') {
       throw new Error('配置格式无效');
     }
+    console.log('💾 服务器收到配置更新请求');
+    console.log('  - elemental_substances 存在:', !!newConfig.elemental_substances);
+    if (newConfig.elemental_substances) {
+      console.log('  - metal_elements:', newConfig.elemental_substances.metal_elements?.length, '项');
+      console.log('  - non_metal_elements:', Object.keys(newConfig.elemental_substances.non_metal_elements || {}).length, '个类别');
+    }
+    
     this.config = applyDefaults(newConfig);
+    
+    console.log('  应用默认值后 elemental_substances 存在:', !!this.config.elemental_substances);
+    if (this.config.elemental_substances) {
+      console.log('  - 保留了 metal_elements:', this.config.elemental_substances.metal_elements?.length, '项');
+    }
+    
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(this.config, null, 2), 'utf8');
+    console.log('✅ 配置已写入磁盘');
     this.emit('changed', this.config);
     return this.config;
   }

@@ -36,6 +36,7 @@ export const API_ENDPOINTS = {
   
   // 配置相关
   config: `${API_BASE_URL}/api/config`,
+  configRefresh: `${API_BASE_URL}/api/config/refresh`,
   
   // 化合物相关
   compounds: `${API_BASE_URL}/api/compounds`,
