@@ -1,4 +1,4 @@
-node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
+# ⚗️ 化学UNO - Chemistry UNO Game
 
 一个基于化学知识的创意卡牌游戏网络应用。玩家需要打出能与上一个物质发生化学反应的物质来继续游戏。
 
@@ -6,7 +6,12 @@ node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
 
 | 🎯 需求 | 📖 查看文档 |
 |--------|-----------|
+| � **浏览所有文档** | [文档中心](docs/README.md) |
 | 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
+| 📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
+| 🔧 **修改反应规则？** | [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) |
+| 🌐 **生产环境部署？** | [部署指南](docs/DEPLOYMENT_GUIDE.md) |
+| ⚡ **快速部署？** | [快速部署](docs/QUICK_DEPLOY.md) |
 | ⚠️ **看不到WebUI？** | [WebUI设置](docs/WEBUI_SETUP.md) |
 | 🎮 **游戏规则？** | 👇 下方详见 |
 | 👨‍💻 **要开发？** | [开发者指南](docs/DEVELOPER_GUIDE.md) |
@@ -20,7 +25,7 @@ node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
 
 ## 🎮 游戏规则
 
-### 牌组成分
+### 牌组成分（可自定义修改）
 - **H、O**：各12张（常见元素）
 - **C、N、F、Na、Mg、Al、Si、P、S、Cl、K、Ca、Mn、Fe、Cu、Zn、Br、I、Ag**：各4张
 - **+2**：8张（摸2张牌）
@@ -35,6 +40,7 @@ node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
    - 下家必须打出能与该物质**反应**的物质
    - 系统自动检索并展示当前元素能组成的所有物质
    - 玩家从物质列表中选择合适的物质打出
+   - （不考虑物质/方程式中的系数）
 3. **无法打出**：摸2张牌，回合结束
 4. **特殊卡牌**：
    - He/Ne/Ar/Kr：反转游戏方向
@@ -46,29 +52,46 @@ node test_rejoin.js# ⚗️ 化学UNO - Chemistry UNO Game
 
 ```
 chemistryuno/
-├── db.json                      # 化学知识库（元素、物质、反应）
-├── server/                      # 后端（Node.js + Express）
+├── config.json                  # 游戏配置文件（元素、物质、反应）
+├── db.json                      # 化学知识库（向后兼容）
+├── server/                      # 后端（Node.js + Express + Socket.IO）
 │   ├── package.json
-│   ├── index.js                # 主服务器文件
-│   └── gameLogic.js            # 游戏逻辑和化学反应匹配
-└── client/                      # 前端（React）
-    ├── package.json
-    ├── public/
-    │   └── index.html
-    └── src/
-        ├── index.js
-        ├── index.css
-        ├── App.js              # 主应用组件
-        ├── App.css
-        └── components/
-            ├── GameLobby.js     # 游戏大厅（创建/加入游戏）
-            ├── GameLobby.css
-            ├── GameBoard.js     # 游戏主界面
-            ├── GameBoard.css
-            ├── Card.js          # 卡牌组件
-            ├── Card.css
-            ├── CompoundSelector.js  # 物质选择浮窗
-            └── CompoundSelector.css
+│   ├── index.js                # 主服务器文件（WebSocket + REST API）
+│   ├── gameLogic.js            # 游戏逻辑和化学反应匹配
+│   ├── database.js             # 化学数据库类
+│   ├── rules.js                # 游戏规则引擎
+│   └── configService.js        # 配置管理服务
+├── client/                      # 前端（React）
+│   ├── package.json
+│   ├── public/
+│   │   └── index.html
+│   └── src/
+│       ├── index.js
+│       ├── index.css
+│       ├── App.js              # 主应用组件
+│       ├── App.css
+│       ├── config/
+│       │   └── api.js          # API配置（支持移动端）
+│       ├── utils/
+│       │   └── chemistryFormatter.js  # 化学式格式化
+│       └── components/
+│           ├── GameLobby.js     # 游戏大厅（创建/加入游戏）
+│           ├── GameLobby.css
+│           ├── GameBoard.js     # 游戏主界面
+│           ├── GameBoard.css
+│           ├── Card.js          # 卡牌组件
+│           ├── Card.css
+│           ├── CompoundSelector.js  # 物质选择浮窗
+│           ├── CompoundSelector.css
+│           ├── AdminPanel.js    # 管理面板（修改反应规则）
+│           ├── AdminPanel.css
+│           ├── AdminLogin.js    # 管理员登录
+│           └── AdminLogin.css
+└── docs/                        # 完整文档目录
+    ├── README.md
+    ├── ADMIN_PANEL_GUIDE.md    # 管理面板使用指南
+    ├── MOBILE_ACCESS_GUIDE.md  # 移动端访问指南
+    └── ... （更多文档）
 ```
 
 ## 🚀 快速开始
@@ -77,59 +100,51 @@ chemistryuno/
 - Node.js >= 14.0
 - npm >= 6.0
 
-### 方案一：npm 一键启动（推荐）⭐
+### 开发环境
 
-#### 1. 安装依赖
 ```bash
-npm install
-```
+# 1. 安装依赖
+npm run install-all
 
-#### 2. 启动应用
-```bash
+# 2. 启动开发服务器
 npm start
+
+# 3. 访问应用
+# 前端：http://localhost:3000
+# 后端：http://localhost:5000
 ```
 
-这将自动启动后端服务器和前端应用：
-- 后端：`http://localhost:5000`
-- 前端：`http://localhost:3000`
+### 生产环境部署
 
-#### 其他 npm 命令
-```bash
-npm run server    # 仅启动后端
-npm run client    # 仅启动前端
-npm run dev       # 开发模式（支持热重载）
-npm run install-all  # 安装所有依赖
-npm run clean     # 清理依赖
-npm run update    # 更新依赖
-npm run audit     # 检查安全漏洞
-```
-
-### 方案二：Docker 容器化启动
-
-#### 前置要求
-- Docker >= 20.0
-- Docker Compose >= 1.29
-
-#### 启动应用
-```bash
-docker-compose up
-```
-
-应用将在以下地址可访问：
-- 前端：`http://localhost:3000`
-- 后端：`http://localhost:5000`
-
-#### 停止应用
-```bash
-docker-compose down
-```
+详见 [完整部署指南](docs/DEPLOYMENT_GUIDE.md) 或 [快速部署指南](docs/QUICK_DEPLOY.md)
 
 ### 游戏入门
+
+#### 电脑端
 1. 打开浏览器访问 `http://localhost:3000`
 2. 输入玩家名称
 3. 选择"创建游戏"并选择玩家数量
 4. 点击"创建游戏"按钮
-5. 等待其他玩家加入或自己分别登录其他标签页测试
+5. 分享房间二维码或房间号给其他玩家
+
+#### 移动端（手机/平板）
+1. **确保设备与电脑在同一WiFi网络**
+2. **获取电脑IP地址**：
+   - Windows: 运行 `ipconfig`，查看 IPv4 地址
+   - macOS/Linux: 运行 `ifconfig` 或 `ip addr`
+3. **手机浏览器访问**：`http://[电脑IP]:3000`
+   - 例如：`http://192.168.1.100:3000`
+4. 扫描房间二维码或输入房间号加入游戏
+
+> 💡 提示：创建房间后会自动生成二维码，手机扫码即可快速加入！
+
+#### 管理面板（修改游戏配置）
+1. 访问 `http://localhost:3000/admin`
+2. 输入管理员密码（在 `.env` 文件中配置 `REACT_APP_ADMIN`）
+3. 可以添加、修改、删除化学反应规则
+4. 点击"保存配置"使修改生效
+
+详细使用说明：[管理面板指南](docs/ADMIN_PANEL_GUIDE.md)
 
 ## 🔌 API 端点
 
@@ -141,17 +156,24 @@ docker-compose down
 | GET | `/api/game/:gameId/:playerId` | 获取游戏状态 |
 | POST | `/api/compounds` | 获取元素能组成的物质 |
 | POST | `/api/reaction/check` | 检查两个物质是否能反应 |
+| GET | `/api/qrcode` | 生成房间二维码 |
+| GET | `/api/config` | 获取游戏配置 |
+| POST | `/api/config` | 保存游戏配置（管理员）|
+| GET | `/api/mobile-info` | 获取移动端访问信息 |
 
 ### WebSocket 事件
 
 #### 发送事件
-- `joinGame` - 加入游戏
+- `joinGame` - 加入游戏（支持重新加入）
 - `playCard` - 打出卡牌
 - `drawCard` - 摸牌
+- `startGame` - 开始游戏（房主）
+- `disconnect` - 断开连接
 
 #### 接收事件
 - `gameStateUpdate` - 游戏状态更新
 - `gameOver` - 游戏结束
+- `playerRejoined` - 玩家重新加入
 - `error` - 错误消息
 
 ## 🧪 核心算法
@@ -197,12 +219,32 @@ docker-compose down
 
 ## 🎯 主要功能
 
+### 核心游戏功能
 - ✅ **实时多人游戏**：基于WebSocket的实时同步
 - ✅ **智能物质推荐**：根据持有卡牌自动推荐可打出的物质
 - ✅ **化学反应验证**：自动检验物质是否能反应
 - ✅ **丰富的卡牌类型**：元素卡、特殊卡牌、功能卡
 - ✅ **游戏逻辑完整**：支持方向反转、跳过、摸牌等规则
+- ✅ **观战模式**：支持中途断线重连和观战
+- ✅ **昵称记忆**：自动记住玩家昵称（会话级别）
+
+### 移动端支持
+- ✅ **跨设备访问**：支持手机、平板通过局域网访问
+- ✅ **二维码分享**：自动生成房间二维码，扫码即可加入
+- ✅ **自动API检测**：自动识别访问设备，选择正确的服务器地址
+- ✅ **触摸优化**：移动端触摸交互优化
 - ✅ **响应式设计**：支持不同屏幕尺寸
+
+### 管理功能
+- ✅ **管理面板**：可视化修改游戏配置（访问 `/admin`）
+- ✅ **反应规则管理**：动态添加/修改/删除化学反应规则
+- ✅ **配置持久化**：配置保存到 `config.json` 文件
+- ✅ **实时生效**：配置修改后立即生效，无需重启服务器
+
+### 网络功能
+- ✅ **局域网支持**：支持同一WiFi下多设备联机
+- ✅ **跨平台**：Windows/macOS/Linux 全平台支持
+- ✅ **服务器状态页**：访问服务器根路径查看状态和快速链接
 
 ## 🛠️ 技术栈
 
@@ -229,8 +271,7 @@ docker-compose down
 
 ## ⚠️ 已知限制
 
-- 仅支持2-4人游戏
-- 不考虑化学计量系数
+- 仅支持2-12人游戏（4人游戏已经过验证）
 - 物质库为简化示例（可根据需要扩展）
 - 暂不支持离线游戏存档
 

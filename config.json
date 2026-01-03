@@ -66,6 +66,47 @@
       "+2": "draw2"
     }
   },
+  "elemental_substances": {
+    "non_metal_elements": {
+      "diatomic_molecules": [
+        "H2",
+        "O2",
+        "N2",
+        "F2",
+        "Cl2",
+        "Br2",
+        "I2"
+      ],
+      "polyatomic_molecules": [
+        "P4",
+        "S8"
+      ],
+      "atomic_crystals": [
+        "C",
+        "Si"
+      ],
+      "noble_gases": [
+        "He",
+        "Ne",
+        "Ar",
+        "Kr"
+      ]
+    },
+    "metal_elements": [
+      "Na",
+      "Mg",
+      "Al",
+      "K",
+      "Ca",
+      "Mn",
+      "Fe",
+      "Cu",
+      "Zn",
+      "Ag",
+      "Au"
+    ],
+    "note": "单质分为金属单质、非金属单质和稀有气体单质。非金属单质有双原子分子(如H2、O2)、多原子分子(如P4、S8)和原子晶体(如金刚石、晶体硅)等不同形式"
+  },
   "common_compounds": {
     "oxides": [
       "H2O",

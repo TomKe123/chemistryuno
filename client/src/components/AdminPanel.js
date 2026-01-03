@@ -28,15 +28,59 @@ const AdminPanel = () => {
     fetchConfig();
   }, []);
 
+  useEffect(() => {
+    if (draft) {
+      console.log('🔄 Draft 状态更新');
+      console.log('  - elemental_substances 存在:', !!draft.elemental_substances);
+      if (draft.elemental_substances) {
+        console.log('  - elemental_substances keys:', Object.keys(draft.elemental_substances));
+      }
+    }
+  }, [draft]);
+
   const fetchConfig = async () => {
     setLoading(true);
     setError('');
     try {
       const res = await axios.get(API_ENDPOINTS.config);
-      setConfig(res.data.config);
-      setDraft(deepClone(res.data.config));
+      const loadedConfig = res.data.config;
+      
+      console.log('📥 加载配置:', loadedConfig);
+      console.log('🧪 单质列表:', loadedConfig.elemental_substances);
+      
+      // 确保 elemental_substances 存在
+      if (!loadedConfig.elemental_substances) {
+        console.warn('⚠️ 配置中没有 elemental_substances，正在创建默认值');
+        loadedConfig.elemental_substances = {
+          non_metal_elements: {
+            diatomic_molecules: [],
+            polyatomic_molecules: [],
+            atomic_crystals: [],
+            noble_gases: []
+          },
+          metal_elements: [],
+          note: "单质分为金属单质、非金属单质和稀有气体单质"
+        };
+      } else {
+        console.log('✅ elemental_substances 存在，包含以下类别:');
+        Object.keys(loadedConfig.elemental_substances).forEach(key => {
+          if (key !== 'note') {
+            const value = loadedConfig.elemental_substances[key];
+            if (Array.isArray(value)) {
+              console.log(`  - ${key}: ${value.length} 项`);
+            } else if (typeof value === 'object') {
+              const subKeys = Object.keys(value);
+              console.log(`  - ${key}: ${subKeys.length} 个子类别 [${subKeys.join(', ')}]`);
+            }
+          }
+        });
+      }
+      
+      setConfig(loadedConfig);
+      setDraft(deepClone(loadedConfig));
       setLastSavedAt(new Date());
     } catch (err) {
+      console.error('❌ 加载配置失败:', err);
       setError(err.response?.data?.error || '加载配置失败');
     } finally {
       setLoading(false);
@@ -126,8 +170,12 @@ const AdminPanel = () => {
 
     setDraft((prev) => {
       const next = deepClone(prev);
-      let cursor = next.common_compounds;
-      for (let i = 0; i < path.length - 1; i += 1) {
+      
+      // 如果路径第一个是 elemental_substances，从那里开始
+      let cursor = path[0] === 'elemental_substances' ? next.elemental_substances : next.common_compounds;
+      const startIndex = path[0] === 'elemental_substances' ? 1 : 0;
+      
+      for (let i = startIndex; i < path.length - 1; i += 1) {
         const key = path[i];
         cursor[key] = cursor[key] || {};
         cursor = cursor[key];
@@ -188,8 +236,9 @@ const AdminPanel = () => {
     const totalCards = orderedElementCounts.reduce((sum, [, count]) => sum + Number(count || 0), 0);
     const specialCount = draft?.card_config?.special_cards ? Object.keys(draft.card_config.special_cards).length : 0;
     const compoundGroups = draft?.common_compounds ? Object.keys(draft.common_compounds).length : 0;
+    const elementalGroups = draft?.elemental_substances ? Object.keys(draft.elemental_substances).filter(k => k !== 'note').length : 0;
     const reactionTypes = draft?.representative_reactions ? Object.keys(draft.representative_reactions).length : 0;
-    return { totalCards, specialCount, compoundGroups, reactionTypes };
+    return { totalCards, specialCount, compoundGroups, elementalGroups, reactionTypes };
   }, [draft, orderedElementCounts]);
 
   if (loading) {
@@ -239,6 +288,7 @@ const AdminPanel = () => {
           <span className="meta-text">总牌数：{stats.totalCards}</span>
           <span className="meta-text">特殊牌：{stats.specialCount}</span>
           <span className="meta-text">物质分类：{stats.compoundGroups}</span>
+          <span className="meta-text">单质分类：{stats.elementalGroups}</span>
           <span className="meta-text">反应类型：{stats.reactionTypes}</span>
         </div>
       </div>
@@ -360,8 +410,61 @@ const AdminPanel = () => {
                         <div className="compound-subtitle">{sub}</div>
                         <textarea
                           value={Array.isArray(list) ? list.join(', ') : ''}
-                          onChange={(e) => updateCompoundList([category, sub], e.target.value)}
+                          onChange={(e) => updateCompoundList(['elemental_substances', category, sub], e.target.value)}
                           rows={3}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+          </div>
+        </section>
+
+        <section className="admin-card wide">
+          <div className="section-header">
+            <h2>单质列表</h2>
+            <span className="section-desc">用逗号分隔各类单质</span>
+          </div>
+          {!draft?.elemental_substances && (
+            <div style={{ padding: '20px', color: '#666', textAlign: 'center' }}>
+              配置加载中或单质列表不存在...
+            </div>
+          )}
+          <div className="compound-grid">
+            {draft?.elemental_substances && Object.entries(draft.elemental_substances).map(([category, value]) => {
+              // 跳过 note 字段
+              if (category === 'note') return null;
+              
+              if (Array.isArray(value)) {
+                return (
+                  <div key={category} className="compound-block">
+                    <div className="compound-title">{category}</div>
+                    <textarea
+                      value={value.join(', ')}
+                      onChange={(e) => updateCompoundList(['elemental_substances', category], e.target.value)}
+                      rows={4}
+                      placeholder="输入单质，用逗号分隔"
+                    />
+                  </div>
+                );
+              }
+
+              if (typeof value === 'object' && value !== null) {
+                return (
+                  <div key={category} className="compound-block">
+                    <div className="compound-title">{category}</div>
+                    {Object.entries(value).map(([sub, list]) => (
+                      <div key={`elemental-${category}-${sub}`} className="compound-subblock">
+                        <div className="compound-subtitle">{sub}</div>
+                        <textarea
+                          value={Array.isArray(list) ? list.join(', ') : ''}
+                          onChange={(e) => updateCompoundList(['elemental_substances', category, sub], e.target.value)}
+                          rows={3}
+                          placeholder="输入单质，用逗号分隔"
                         />
                       </div>
                     ))}
