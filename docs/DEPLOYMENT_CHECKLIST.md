@@ -38,11 +38,11 @@
 - [ ] 容器启动成功：`docker-compose -f docker-compose.production.yml up -d`
 - [ ] 容器运行正常：`docker-compose -f docker-compose.production.yml ps`
 
-### 方式 B：npm 手动部署
+### 方式 B：pnpm 手动部署
 - [ ] Node.js 已安装
-- [ ] 依赖已安装：`npm run install-all`
-- [ ] 前端已构建：`npm run build`
-- [ ] 服务已启动：`npm start`
+- [ ] 依赖已安装：`pnpm install`
+- [ ] 前端已构建：`pnpm run build`
+- [ ] 服务已启动：`pnpm start`
 
 ## 部署后检查（Post-Deployment）
 
@@ -136,16 +136,16 @@ docker-compose -f docker-compose.production.yml restart
 docker-compose -f docker-compose.production.yml down
 ```
 
-### npm 方式
+### pnpm 方式
 ```bash
 # 安装依赖
-npm run install-all
+pnpm install
 
 # 构建前端
-npm run build
+pnpm run build
 
 # 启动服务
-npm start
+pnpm start
 ```
 
 ### 健康检查

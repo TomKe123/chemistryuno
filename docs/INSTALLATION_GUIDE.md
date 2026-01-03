@@ -121,12 +121,12 @@ added 1500+ packages in 2-3 minutes
 
 > 📖 详细的启动指南请查看 [GETTING_STARTED.md](./GETTING_STARTED.md)
 
-### 方式1：npm 一键启动（推荐）⭐
+### 方式1：pnpm 一键启动（推荐）⭐
 
 ```bash
 # 项目根目录
-npm install    # 首次需要安装依赖
-npm start      # 启动前后端
+pnpm install    # 首次需要安装依赖
+pnpm start      # 启动前后端
 ```
 
 应用将自动启动：
@@ -143,7 +143,7 @@ docker-compose up
 
 ---
 
-## 📝 npm 常用命令
+## 📝 pnpm 常用命令
 
 ### 前端命令
 
@@ -151,19 +151,19 @@ docker-compose up
 cd client
 
 # 安装依赖
-npm install
+pnpm install
 
 # 启动开发服务器
-npm start
+pnpm start
 
 # 构建生产版本
-npm run build
+pnpm run build
 
 # 运行测试
-npm test
+pnpm test
 
 # 弹出配置（不可逆！）
-npm run eject
+pnpm run eject
 ```
 
 ---

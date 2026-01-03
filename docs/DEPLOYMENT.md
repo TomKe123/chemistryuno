@@ -32,17 +32,17 @@ docker-compose -f docker-compose.production.yml up -d
 docker-compose -f docker-compose.production.yml logs -f
 ```
 
-### 方式二：npm 手动部署
+### 方式二：pnpm 手动部署
 
 ```bash
 # 1. 安装依赖
-npm run install-all
+pnpm install
 
 # 2. 构建前端
-npm run build
+pnpm run build
 
 # 3. 启动服务
-npm start
+pnpm start
 ```
 
 ## 📝 使用前准备
@@ -96,14 +96,14 @@ docker-compose -f docker-compose.production.yml restart
 docker-compose -f docker-compose.production.yml down
 ```
 
-### npm 方式
+### pnpm 方式
 
 ```bash
 # 查看进程
 ps aux | grep node
 
 # 重启服务（需手动停止和启动）
-# Ctrl+C 停止，然后 npm start
+# Ctrl+C 停止，然后 pnpm start
 ```
 
 ## 🏥 健康检查
@@ -112,8 +112,8 @@ ps aux | grep node
 # 运行健康检查脚本
 node healthcheck.js
 
-# 或使用 npm 命令
-npm run health
+# 或使用 pnpm 命令
+pnpm run health
 
 # 或使用 curl
 curl http://localhost:5000

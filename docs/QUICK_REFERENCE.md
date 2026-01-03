@@ -2,9 +2,9 @@
 
 ## 🚀 30秒快速启动
 
-### Windows/Linux/macOS - npm 方式
+### Windows/Linux/macOS - pnpm 方式
 ```bash
-npm install && npm start
+pnpm install && pnpm start
 ```
 👉 浏览器打开 http://localhost:3000
 
@@ -67,8 +67,8 @@ docker-compose logs -f  # 查看日志
 | 问题 | 解决方案 |
 |------|---------|
 | 端口占用 | 修改 server/index.js 的 PORT |
-| npm 找不到 | 安装 Node.js >= 14 |
-| 依赖安装失败 | `npm cache clean --force` |
+| pnpm 找不到 | 安装 Node.js >= 14，然后 corepack enable pnpm |
+| 依赖安装失败 | `pnpm store prune` |
 | 连接失败 | 确保后端运行在 5000 端口 |
 
 ---

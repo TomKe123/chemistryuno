@@ -57,10 +57,10 @@ cp .env.example .env
 # 3. Docker 部署（推荐）
 docker-compose -f docker-compose.production.yml up -d
 
-# 或者使用 npm 手动部署
-npm run install-all
-npm run build
-npm start
+# 或者使用 pnpm 手动部署
+pnpm install
+pnpm run build
+pnpm start
 ```
 
 ---
@@ -173,7 +173,7 @@ ALLOWED_ORIGINS=https://your-domain.com
 
 ```bash
 # 构建生产版本
-npm run build
+pnpm run build
 
 # 构建后的文件在 client/build 目录
 ```
@@ -181,23 +181,23 @@ npm run build
 ### 4. 启动服务
 
 ```bash
-# 方式一：使用 npm start（开发模式，包含热重载）
-npm start
+# 方式一：使用 pnpm start（开发模式，包含热重载）
+pnpm start
 
 # 方式二：生产模式启动
-NODE_ENV=production npm start
+NODE_ENV=production pnpm start
 
 # 方式三：分别启动前端和后端
 # 终端1：启动后端
-cd server && npm start
+cd server && pnpm start
 
 # 终端2：启动前端（开发服务器）
-cd client && npm start
+cd client && pnpm start
 ```
 
 ### 5. 使用 Nginx 部署（推荐用于生产环境）
 
-如果使用 npm 部署，建议使用 Nginx 作为反向代理：
+如果使用 pnpm 部署，建议使用 Nginx 作为反向代理：
 
 ```bash
 # 1. 安装 Nginx

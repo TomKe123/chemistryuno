@@ -151,20 +151,20 @@ LOG_LEVEL=info
 
 ---
 
-## 📝 NPM 命令速查
+## 📝 PNPM 命令速查
 
 ### 开发命令
 ```bash
-npm start              # 启动开发服务器（前端+后端）
-npm run dev            # 同上
-npm run server         # 仅启动后端
-npm run client         # 仅启动前端
+pnpm start              # 启动开发服务器（前端+后端）
+pnpm run dev            # 同上
+pnpm run server         # 仅启动后端
+pnpm run client         # 仅启动前端
 ```
 
 ### 构建命令
 ```bash
-npm run build          # 构建生产版本（前端+后端）
-npm run install-all    # 安装所有依赖（root+client+server）
+pnpm run build          # 构建生产版本（前端+后端）
+pnpm install            # 安装所有依赖（root+client+server）
 ```
 
 ### Docker 命令

@@ -89,12 +89,12 @@ bash start-game.sh
 
 > 📖 **详细启动指南，请查看 [GETTING_STARTED.md](GETTING_STARTED.md)**
 
-### 推荐方式 1️⃣：npm 一键启动 ⭐
+### 推荐方式 1️⃣：pnpm 一键启动 ⭐
 
 ```bash
 # 项目根目录
-npm install     # 首次运行安装依赖
-npm start       # 启动前后端
+pnpm install     # 首次运行安装依赖
+pnpm start       # 启动前后端
 ```
 
 应用地址: http://localhost:3000
@@ -107,16 +107,16 @@ docker-compose up
 
 应用地址: http://localhost:3000
 
-### 其他 npm 命令
+### 其他 pnpm 命令
 
 ```bash
-npm run server     # 仅启动后端
-npm run client     # 仅启动前端
-npm run dev        # 开发模式（热重载）
-npm run install-all # 重新安装所有依赖
-npm run clean      # 清理依赖
-npm run update     # 更新依赖
-npm run audit      # 检查安全问题
+pnpm run server     # 仅启动后端
+pnpm run client     # 仅启动前端
+pnpm run dev        # 开发模式（热重载）
+pnpm run install-all # 重新安装所有依赖
+pnpm run clean      # 清理依赖
+pnpm run update     # 更新依赖
+pnpm run audit      # 检查安全问题
 ```
 
 ---

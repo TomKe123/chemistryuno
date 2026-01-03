@@ -8,7 +8,8 @@
 |--------|-----------|
 | � **浏览所有文档** | [文档中心](docs/README.md) |
 | 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
-| 📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
+| � **从npm迁移到pnpm？** | [迁移指南](docs/PNPM_MIGRATION_GUIDE.md) |
+| �📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
 | 🔧 **修改反应规则？** | [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) |
 | 🌐 **生产环境部署？** | [部署指南](docs/DEPLOYMENT_GUIDE.md) |
 | ⚡ **快速部署？** | [快速部署](docs/QUICK_DEPLOY.md) |
@@ -98,16 +99,16 @@ chemistryuno/
 
 ### 前置要求
 - Node.js >= 14.0
-- npm >= 6.0
+- pnpm >= 8.0
 
 ### 开发环境
 
 ```bash
 # 1. 安装依赖
-npm run install-all
+pnpm install
 
 # 2. 启动开发服务器
-npm start
+pnpm start
 
 # 3. 访问应用
 # 前端：http://localhost:3000

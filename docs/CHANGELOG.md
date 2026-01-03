@@ -1,5 +1,40 @@
 # 更新日志
 
+## [1.2.0] - 2026-01-03
+
+### 重大变更
+- 📦 **从 npm 迁移到 pnpm**
+  - 使用 pnpm 作为包管理工具
+  - 安装速度提升 2-3 倍
+  - 磁盘空间节省显著
+  - 添加工作区（workspace）支持
+  - 更严格的依赖管理
+
+### 新增
+- ✨ 新增 `pnpm-workspace.yaml` 工作区配置
+- ✨ 新增 `.npmrc` pnpm 配置文件
+- 📚 新增 [PNPM_MIGRATION_GUIDE.md](PNPM_MIGRATION_GUIDE.md) 迁移指南
+- 📚 新增 [PNPM_MIGRATION_SUMMARY.md](../PNPM_MIGRATION_SUMMARY.md) 迁移总结
+
+### 更新
+- 🔄 更新所有 npm 命令为 pnpm 命令
+- 🔄 更新 Dockerfile 和 Dockerfile.production 支持 pnpm
+- 🔄 更新 docker-compose.yml 使用 pnpm
+- 🔄 更新 package.json 脚本和 engines 配置
+- 📝 更新所有文档中的 npm 引用为 pnpm
+- 📝 更新 README.md 添加迁移指南链接
+
+### 改进
+- ⚡ 依赖安装速度显著提升
+- 💾 磁盘空间使用大幅减少
+- 🔒 依赖管理更加严格和安全
+- 🔧 简化了 monorepo 管理（使用工作区特性）
+
+### 迁移说明
+查看 [PNPM 迁移指南](PNPM_MIGRATION_GUIDE.md) 了解详细的迁移步骤。
+
+---
+
 ## [1.1.0] - 2024-01-XX
 
 ### 新增功能
