@@ -197,26 +197,6 @@ npm start
    AgNO3 + NaCl → AgCl↓ + NaNO3 ✓
    ```
 
-## 📊 数据库结构
-
-`db.json` 包含：
-- **metadata**: 元素列表
-- **common_compounds**: 按类别分组的物质
-  - oxides（氧化物）
-  - hydroxides（氢氧化物）
-  - acids（酸）
-  - salts（盐）
-  - other_inorganics（其他无机物）
-- **representative_reactions**: 按类型分类的化学反应
-  - acid_base（酸碱反应）
-  - precipitation（沉淀反应）
-  - redox（氧化还原反应）
-  - thermal_decomposition（热分解反应）
-  - combination（化合反应）
-  - displacement（置换反应）
-- **reactivity_series**: 活泼性序列
-- **solubility_rules**: 溶解度规则
-
 ## 🎯 主要功能
 
 ### 核心游戏功能
