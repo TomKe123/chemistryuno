@@ -2,27 +2,37 @@
 
 ## 项目架构
 
-### 前端架构 (React)
+### 前端架构 (React + TypeScript)
 ```
 src/
-├── App.js                    # 主应用，管理游戏状态和WebSocket连接
+├── App.tsx                   # 主应用，管理游戏状态和WebSocket连接
 ├── App.css
-├── index.js                  # React入口
+├── index.tsx                 # React入口
 ├── index.css
+├── config/
+│   └── api.ts                # API配置（支持移动端）
+├── utils/
+│   └── chemistryFormatter.ts # 化学式格式化
 └── components/
-    ├── GameLobby.js         # 游戏大厅 - 创建/加入游戏
-    ├── GameBoard.js         # 游戏主界面 - 显示卡牌、游戏状态
-    ├── Card.js              # 卡牌组件 - 单个卡牌显示
-    └── CompoundSelector.js  # 物质选择浮窗 - 选择打出的物质
+    ├── GameLobby.tsx        # 游戏大厅 - 创建/加入游戏
+    ├── GameBoard.tsx        # 游戏主界面 - 显示卡牌、游戏状态
+    ├── Card.tsx             # 卡牌组件 - 单个卡牌显示
+    ├── CompoundSelector.tsx # 物质选择浮窗 - 选择打出的物质
+    ├── Setup.tsx            # 游戏设置组件
+    ├── AdminPanel.tsx       # 管理面板
+    └── AdminLogin.tsx       # 管理员登录
 ```
 
-### 后端架构 (Node.js/Express)
+### 后端架构 (Node.js + TypeScript + Express)
 ```
 server/
-├── index.js                 # Express服务器和WebSocket处理
-├── gameLogic.js            # 核心游戏逻辑（保留用于兼容性）
-├── database.js             # ChemistryDatabase类 - 物质库和反应匹配
-└── rules.js                # GameRules类 - 游戏规则引擎
+├── index.ts                 # Express服务器和WebSocket处理
+├── gameLogic.ts            # 核心游戏逻辑
+├── database.ts             # ChemistryDatabase类 - 物质库和反应匹配
+├── rules.ts                # GameRules类 - 游戏规则引擎
+├── configService.ts        # 配置管理服务
+├── tsconfig.json           # TypeScript配置
+└── dist/                   # TypeScript编译输出
 ```
 
 ## 核心概念

@@ -8,7 +8,8 @@
 |--------|-----------|
 | � **浏览所有文档** | [文档中心](docs/README.md) |
 | 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
-| � **从npm迁移到pnpm？** | [迁移指南](docs/PNPM_MIGRATION_GUIDE.md) |
+| 📦 **从npm迁移到pnpm？** | [pnpm迁移指南](docs/PNPM_MIGRATION_GUIDE.md) |
+| 🔷 **TypeScript迁移说明** | [TypeScript迁移总结](TYPESCRIPT_MIGRATION_SUMMARY.md) |
 | �📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
 | 🔧 **修改反应规则？** | [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) |
 | 🌐 **生产环境部署？** | [部署指南](docs/DEPLOYMENT_GUIDE.md) |
@@ -53,62 +54,82 @@
 
 ```
 chemistryuno/
+├── package.json                 # 项目主配置（pnpm workspace）
+├── pnpm-workspace.yaml          # pnpm工作区配置
+├── tsconfig.json                # TypeScript根配置
 ├── config.json                  # 游戏配置文件（元素、物质、反应）
-├── db.json                      # 化学知识库（向后兼容）
-├── server/                      # 后端（Node.js + Express + Socket.IO）
+├── Dockerfile                   # Docker开发环境配置
+├── Dockerfile.production        # Docker生产环境配置
+├── docker-compose.yml           # Docker Compose开发配置
+├── docker-compose.production.yml # Docker Compose生产配置
+├── healthcheck.ts               # 健康检查脚本
+├── server/                      # 后端（Node.js + TypeScript + Express + Socket.IO）
 │   ├── package.json
-│   ├── index.js                # 主服务器文件（WebSocket + REST API）
-│   ├── gameLogic.js            # 游戏逻辑和化学反应匹配
-│   ├── database.js             # 化学数据库类
-│   ├── rules.js                # 游戏规则引擎
-│   └── configService.js        # 配置管理服务
-├── client/                      # 前端（React）
+│   ├── tsconfig.json            # 后端TypeScript配置
+│   ├── index.ts                 # 主服务器文件（WebSocket + REST API）
+│   ├── gameLogic.ts             # 游戏逻辑和化学反应匹配
+│   ├── database.ts              # 化学数据库类
+│   ├── rules.ts                 # 游戏规则引擎
+│   ├── configService.ts         # 配置管理服务
+│   ├── *.js                     # 编译前的旧JS文件（待清理）
+│   └── dist/                    # TypeScript编译输出目录
+├── client/                      # 前端（React 18 + TypeScript）
 │   ├── package.json
+│   ├── tsconfig.json            # 前端TypeScript配置
 │   ├── public/
 │   │   └── index.html
 │   └── src/
-│       ├── index.js
+│       ├── index.tsx            # 入口文件
 │       ├── index.css
-│       ├── App.js              # 主应用组件
+│       ├── App.tsx              # 主应用组件
 │       ├── App.css
 │       ├── config/
-│       │   └── api.js          # API配置（支持移动端）
+│       │   └── api.ts           # API配置（支持移动端）
 │       ├── utils/
-│       │   └── chemistryFormatter.js  # 化学式格式化
+│       │   └── chemistryFormatter.ts  # 化学式格式化
 │       └── components/
-│           ├── GameLobby.js     # 游戏大厅（创建/加入游戏）
+│           ├── GameLobby.tsx    # 游戏大厅（创建/加入游戏）
 │           ├── GameLobby.css
-│           ├── GameBoard.js     # 游戏主界面
+│           ├── GameBoard.tsx    # 游戏主界面
 │           ├── GameBoard.css
-│           ├── Card.js          # 卡牌组件
+│           ├── Card.tsx         # 卡牌组件
 │           ├── Card.css
-│           ├── CompoundSelector.js  # 物质选择浮窗
+│           ├── CompoundSelector.tsx # 物质选择浮窗
 │           ├── CompoundSelector.css
-│           ├── AdminPanel.js    # 管理面板（修改反应规则）
+│           ├── Setup.tsx        # 游戏设置组件
+│           ├── Setup.css
+│           ├── AdminPanel.tsx   # 管理面板（修改反应规则）
 │           ├── AdminPanel.css
-│           ├── AdminLogin.js    # 管理员登录
-│           └── AdminLogin.css
+│           ├── AdminLogin.tsx   # 管理员登录
+│           ├── AdminLogin.css
+│           └── *.js             # 编译前的旧JS文件（待清理）
 └── docs/                        # 完整文档目录
-    ├── README.md
-    ├── ADMIN_PANEL_GUIDE.md    # 管理面板使用指南
-    ├── MOBILE_ACCESS_GUIDE.md  # 移动端访问指南
+    ├── README.md                # 文档中心
+    ├── ADMIN_PANEL_GUIDE.md     # 管理面板使用指南
+    ├── MOBILE_ACCESS_GUIDE.md   # 移动端访问指南
+    ├── DEPLOYMENT_GUIDE.md      # 部署指南
+    ├── DEVELOPER_GUIDE.md       # 开发者指南
     └── ... （更多文档）
 ```
 
 ## 🚀 快速开始
 
 ### 前置要求
-- Node.js >= 14.0
-- pnpm >= 8.0
+- **Node.js** >= 14.0
+- **pnpm** >= 8.0 ([安装指南](https://pnpm.io/installation))
+
+> 💡 项目已从 npm 迁移到 pnpm，具有更快的安装速度和更小的磁盘占用。
 
 ### 开发环境
 
 ```bash
-# 1. 安装依赖
+# 1. 安装依赖（使用pnpm workspace自动安装所有子包）
 pnpm install
 
-# 2. 启动开发服务器
+# 2. 启动开发服务器（并发启动前后端）
 pnpm start
+# 或使用开发模式（热重载）
+pnpm run dev
 
 # 3. 访问应用
 # 前端：http://localhost:3000
@@ -230,15 +251,30 @@ pnpm start
 ## 🛠️ 技术栈
 
 ### 后端
+- **Node.js >= 14.0** - JavaScript运行时
+- **TypeScript 5.3+** - 类型安全的JavaScript超集
 - **Express.js** - Web框架
-- **Socket.io** - 实时通信
-- **Node.js** - 运行时环境
+- **Socket.IO 4.5+** - 实时双向通信
+- **ts-node** - TypeScript直接执行
+- **QRCode** - 二维码生成
 
 ### 前端
 - **React 18** - UI框架
-- **Socket.io-client** - WebSocket客户端
+- **TypeScript 5.3+** - 类型安全开发
+- **Socket.IO-client 4.5+** - WebSocket客户端
 - **Axios** - HTTP客户端
+- **React Scripts 5.0** - 构建工具链
 - **CSS3** - 样式设计
+
+### 工具链
+- **pnpm 8.15+** - 快速、节省磁盘空间的包管理器
+- **pnpm workspace** - Monorepo管理
+- **Docker** - 容器化部署
+- **concurrently** - 并发任务运行
+
+### 开发工具
+- **nodemon** - 开发热重载
+- **TypeScript Compiler** - 类型检查和编译
 
 ## 📝 扩展可能性
 

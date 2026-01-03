@@ -33,6 +33,8 @@
 
 ### 项目信息
 - [更新日志](CHANGELOG.md) - 版本更新历史
+- [PNPM迁移指南](PNPM_MIGRATION_GUIDE.md) - npm到pnpm迁移
+- [TypeScript迁移总结](../TYPESCRIPT_MIGRATION_SUMMARY.md) - TypeScript迁移说明
 - [完成报告](COMPLETION_REPORT.md) - 项目交付报告
 - [清理总结](CLEANUP_SUMMARY.md) - 项目优化记录
 - [管理面板修复](ADMIN_PANEL_FIX.md) - 管理面板更新说明

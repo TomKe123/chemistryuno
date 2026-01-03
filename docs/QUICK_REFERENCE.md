@@ -38,15 +38,18 @@ docker-compose up
 
 ---
 
-## 🛠️ npm 常用命令
+## 🛠️ pnpm 常用命令
 
 ```bash
-npm start           # 启动前后端 ⭐
-npm run server      # 仅启动后端
-npm run client      # 仅启动前端
-npm run dev         # 开发模式
-npm run install-all # 重新安装依赖
-npm run clean       # 清理缓存
+pnpm start            # 启动前后端 ⭐
+pnpm run server       # 仅启动后端 (TypeScript)
+pnpm run client       # 仅启动前端 (React + TypeScript)
+pnpm run dev          # 开发模式（热重载）
+pnpm install          # 安装所有依赖（workspace）
+pnpm run clean        # 清理缓存和node_modules
+pnpm run build        # 构建前端生产版本
+pnpm run build:server # 编译后端TypeScript
+pnpm run health       # 运行健康检查
 ```
 
 ---
@@ -66,28 +69,31 @@ docker-compose logs -f  # 查看日志
 
 | 问题 | 解决方案 |
 |------|---------|
-| 端口占用 | 修改 server/index.js 的 PORT |
-| pnpm 找不到 | 安装 Node.js >= 14，然后 corepack enable pnpm |
-| 依赖安装失败 | `pnpm store prune` |
+| 端口占用 | 修改 server/index.ts 的 PORT 变量 |
+| pnpm 找不到 | `npm install -g pnpm` 或 `corepack enable` |
+| 依赖安装失败 | `pnpm store prune && pnpm install` |
 | 连接失败 | 确保后端运行在 5000 端口 |
+| TypeScript错误 | 检查 tsconfig.json 配置 |
 
 ---
 
 ## 📊 项目信息
 
-- **代码**: 2160+ 行
-- **文档**: 10 份
+- **语言**: TypeScript + React
+- **包管理**: pnpm (workspace)
+- **代码**: 2500+ 行
+- **文档**: 20+ 份
 - **物质**: 150+ 种
 - **反应**: 40+ 种
-- **API**: 5 个端点
-- **组件**: 4 个 React 组件
+- **API**: 8 个端点
+- **组件**: 7 个 React 组件
 
 ---
 
 ## 🎉 现在就开始！
 
 ```bash
-npm install && npm start
+pnpm install && pnpm start
 ```
 
 祝你游戏愉快！🚀

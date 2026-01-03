@@ -1,5 +1,47 @@
 # 更新日志
 
+## [1.3.0] - 2026-01-03
+
+### 重大变更
+- 🔷 **全面迁移到 TypeScript**
+  - 前端全部组件迁移至 TypeScript (TSX)
+  - 后端所有模块迁移至 TypeScript
+  - 添加完整的类型定义和接口
+  - 提升代码安全性和可维护性
+  - 改善IDE开发体验
+
+### 新增
+- ✨ 新增 TypeScript 配置文件
+  - 根目录 `tsconfig.json`
+  - `server/tsconfig.json` (后端配置)
+  - `client/tsconfig.json` (前端配置)
+- ✨ 新增类型定义和接口
+- ✨ 添加 ts-node 支持直接运行 TypeScript
+- 🔧 后端添加 `build:server` 脚本编译 TypeScript
+
+### 更新
+- 🔄 所有 `.js` 文件迁移为 `.ts`
+- 🔄 所有 React 组件迁移为 `.tsx`
+- 🔄 更新依赖包支持 TypeScript
+  - @types/node, @types/express, @types/cors
+  - @types/react, @types/react-dom
+- 📝 更新所有文档反映 TypeScript 技术栈
+- 📝 更新开发指南包含 TypeScript 说明
+
+### 改进
+- ⚡ 编译时类型检查，减少运行时错误
+- 🔒 更好的代码安全性和类型安全
+- 💡 改善IDE智能提示和代码补全
+- 📖 代码自文档化（类型即文档）
+
+### 技术栈更新
+- TypeScript 5.3+
+- React 18 + TypeScript
+- Node.js + Express + TypeScript
+- 保持与 pnpm 8.15+ 的兼容
+
+---
+
 ## [1.2.0] - 2026-01-03
 
 ### 重大变更
@@ -94,9 +136,11 @@
 - 👥 多人游戏支持
 
 ### 技术栈
-- React 18.2
-- Node.js + Express
-- Socket.io 4.5
+- TypeScript 5.3+
+- React 18.2 + TypeScript
+- Node.js + Express + TypeScript
+- Socket.IO 4.5+
+- pnpm 8.15+
 - 化学元素数据库
 
 ---

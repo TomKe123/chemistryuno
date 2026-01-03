@@ -5,12 +5,13 @@
 ### ✅ 已完成的功能
 
 #### 1. 完整的Web应用框架
-- [x] Express.js 后端服务器
-- [x] React 前端应用
-- [x] WebSocket 实时通信
+- [x] Express.js + TypeScript 后端服务器
+- [x] React 18 + TypeScript 前端应用
+- [x] WebSocket 实时通信 (Socket.IO 4.5+)
 - [x] REST API 端点
 - [x] CORS 跨域支持
 - [x] 服务器状态页面
+- [x] pnpm workspace monorepo 架构
 
 #### 2. 游戏逻辑实现
 - [x] 卡牌初始化和洗牌
@@ -98,61 +99,87 @@
 
 ```
 chemistryuno/
-├── db.json                           # 化学知识库
-├── README.md                         # 项目说明（用户）
-├── DEVELOPER_GUIDE.md               # 开发指南
-├── start-game.bat                   # Windows启动脚本
-├── start-game.sh                    # Linux/macOS启动脚本
+├── package.json                      # 根项目配置 (pnpm workspace)
+├── pnpm-workspace.yaml              # pnpm workspace 配置
+├── tsconfig.json                    # TypeScript 根配置
+├── config.json                      # 游戏配置文件
+├── README.md                        # 项目说明（用户）
+├── Dockerfile                       # Docker 开发环境
+├── Dockerfile.production           # Docker 生产环境
+├── docker-compose.yml              # Docker Compose 开发
+├── docker-compose.production.yml   # Docker Compose 生产
 │
-├── server/                          # 后端
+├── docs/                            # 完整文档目录
+│   ├── README.md                   # 文档中心
+│   ├── GETTING_STARTED.md          # 快速开始
+│   ├── DEVELOPER_GUIDE.md          # 开发指南
+│   ├── DEPLOYMENT_GUIDE.md         # 部署指南
+│   └── ... (20+ 文档)
+│
+├── server/                          # 后端 (TypeScript)
 │   ├── package.json                # 依赖配置
-│   ├── index.js                    # Express服务器 (400+ 行)
-│   ├── gameLogic.js                # 游戏逻辑 (300+ 行)
-│   ├── database.js                 # 化学数据库 (200+ 行)
-│   └── rules.js                    # 游戏规则引擎 (250+ 行)
+│   ├── tsconfig.json               # TypeScript 配置
+│   ├── index.ts                    # Express服务器 (400+ 行)
+│   ├── gameLogic.ts                # 游戏逻辑 (300+ 行)
+│   ├── database.ts                 # 化学数据库 (200+ 行)
+│   ├── rules.ts                    # 游戏规则引擎 (250+ 行)
+│   ├── configService.ts            # 配置管理 (200+ 行)
+│   └── dist/                       # TypeScript 编译输出
 │
-└── client/                         # 前端
+└── client/                         # 前端 (React + TypeScript)
     ├── package.json               # 依赖配置
+    ├── tsconfig.json              # TypeScript 配置
     ├── public/
     │   └── index.html             # HTML模板
     └── src/
-        ├── index.js               # React入口
+        ├── index.tsx              # React入口
         ├── index.css              # 全局样式
-        ├── App.js                 # 主应用 (100+ 行)
+        ├── App.tsx                # 主应用 (100+ 行)
         ├── App.css
+        ├── config/
+        │   └── api.ts             # API配置
+        ├── utils/
+        │   └── chemistryFormatter.ts  # 化学式格式化
         └── components/            # React组件
-            ├── GameLobby.js       # 游戏大厅 (150+ 行)
+            ├── GameLobby.tsx      # 游戏大厅 (150+ 行)
             ├── GameLobby.css
-            ├── GameBoard.js       # 游戏主界面 (150+ 行)
+            ├── GameBoard.tsx      # 游戏主界面 (200+ 行)
             ├── GameBoard.css
-            ├── Card.js            # 卡牌组件 (30+ 行)
+            ├── Card.tsx           # 卡牌组件 (50+ 行)
             ├── Card.css
-            ├── CompoundSelector.js # 物质选择器 (80+ 行)
-            └── CompoundSelector.css
+            ├── CompoundSelector.tsx  # 物质选择器 (100+ 行)
+            ├── CompoundSelector.css
+            ├── Setup.tsx          # 游戏设置 (80+ 行)
+            ├── Setup.css
+            ├── AdminPanel.tsx     # 管理面板 (300+ 行)
+            ├── AdminPanel.css
+            ├── AdminLogin.tsx     # 管理员登录 (60+ 行)
+            └── AdminLogin.css
 ```
 
-**总计代码量**: 1500+ 行
+**总计代码量**: 2500+ 行 TypeScript/TSX
 
 ## 🚀 快速启动
 
-### 方式1：使用脚本（推荐）
-**Windows**: 双击 `start-game.bat`
-**Linux/macOS**: 运行 `bash start-game.sh`
-
-### 方式2：手动启动
-
-**终端1 - 后端**
+### 方式1：使用 pnpm（推荐）
 ```bash
-cd server
-npm install
-npm start
+# 安装依赖
+pnpm install
+
+# 启动前后端
+pnpm start
+
+# 或使用开发模式（热重载）
+pnpm run dev
 ```
 
-**终端2 - 前端**
+### 方式2：使用 Docker
 ```bash
-cd client
-npm install
-npm start
+# 开发环境
+docker-compose up
+
+# 生产环境
+docker-compose -f docker-compose.production.yml up -d
 ```
 
 浏览器访问 `http://localhost:3000`
@@ -160,20 +187,27 @@ npm start
 ## 💻 技术栈
 
 ### 后端
-- **Node.js** - 运行时
+- **Node.js >= 14.0** - JavaScript/TypeScript 运行时
+- **TypeScript 5.3+** - 类型安全开发
 - **Express.js 4.18** - Web框架
-- **Socket.io 4.5** - 实时通信
+- **Socket.IO 4.5+** - 实时双向通信
+- **ts-node** - TypeScript 直接执行
 - **CORS** - 跨域支持
 
 ### 前端
 - **React 18** - UI框架
-- **Socket.io-client 4.5** - WebSocket客户端
+- **TypeScript 5.3+** - 类型安全开发
+- **Socket.IO-client 4.5+** - WebSocket客户端
 - **Axios 1.3** - HTTP请求
+- **React Scripts 5.0** - 构建工具链
 - **CSS3** - 样式（Flexbox、Grid、动画）
 
-### 开发工具
-- **npm** - 包管理
-- **nodemon** - 服务器热重载（可选）
+### 工具链
+- **pnpm 8.15+** - 快速包管理器
+- **pnpm workspace** - Monorepo 管理
+- **Docker & Docker Compose** - 容器化部署
+- **concurrently** - 并发任务运行
+- **nodemon** - 开发热重载
 
 ## 🎮 游戏体验演示
 
