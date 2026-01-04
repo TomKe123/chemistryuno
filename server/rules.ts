@@ -188,7 +188,7 @@ class GameRules {
     
     // 检查是否需要跳过当前玩家（skip卡效果）
     if (gameState.shouldSkipNext) {
-      console.log(`跳过玩家${gameState.currentPlayer}`);
+      
       gameState.currentPlayer = (gameState.currentPlayer + gameState.direction + playerCount) % playerCount;
       gameState.shouldSkipNext = false;
     }
@@ -202,7 +202,7 @@ class GameRules {
       
       // 如果没有加牌卡，则结算累加的抽牌，并再次跳到下一个玩家
       if (!hasDrawCard) {
-        console.log(`玩家${gameState.currentPlayer}无法继续累加，抽${gameState.pendingDraws}张牌`);
+        
         for (let i = 0; i < gameState.pendingDraws; i++) {
           if (gameState.deck.length > 0) {
             currentPlayer.hand.push(gameState.deck.pop());

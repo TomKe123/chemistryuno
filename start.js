@@ -62,7 +62,7 @@ async function start() {
   
   log('green', '正在启动开发服务器...\n');
   log('cyan', '  前端: http://localhost:3000');
-  log('cyan', '  后端: http://localhost:5000');
+  log('cyan', '  后端: http://localhost:4001');
   log('cyan', '  管理面板: http://localhost:3000/admin');
   console.log('');
   log('cyan', '按 Ctrl+C 停止服务');

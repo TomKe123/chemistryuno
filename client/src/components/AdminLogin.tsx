@@ -12,11 +12,16 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, expectedPassword }) 
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    if (!expectedPassword) {
-      setError('未配置管理员密码，请设置 REACT_APP_ADMIN');
+    
+    // 从localStorage读取密码作为备选
+    const storedPassword = localStorage.getItem('adminPassword') || '';
+    const actualPassword = expectedPassword || storedPassword;
+    
+    if (!actualPassword) {
+      setError('未配置管理员密码，请返回 /setup 页面设置');
       return;
     }
-    if (password === expectedPassword) {
+    if (password === actualPassword) {
       setError('');
       onSuccess();
     } else {

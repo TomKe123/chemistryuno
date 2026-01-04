@@ -116,7 +116,7 @@ DISABLE_ESLINT_PLUGIN=true
     console.log('');
     log('green', '✓ 服务已启动');
     log('cyan', '  前端: http://localhost:4000');
-    log('cyan', '  后端: http://localhost:5000');
+    log('cyan', '  后端: http://localhost:4001');
     log('cyan', '  管理面板: http://localhost:4000/admin');
     console.log('');
     

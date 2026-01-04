@@ -8,12 +8,12 @@ const getApiBaseUrl = (): string => {
   // 在生产环境或移动设备访问时，使用当前主机
   // 如果前端和后端在同一台服务器上，使用相对路径
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5000';
+    return 'http://localhost:4001';
   }
   
   // 移动设备访问时，使用实际的服务器地址
-  // 假设后端运行在5000端口
-  return `http://${window.location.hostname}:5000`;
+  // 假设后端运行在4001端口
+  return `http://${window.location.hostname}:4001`;
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -45,11 +45,5 @@ export const API_ENDPOINTS = {
   // 化合物相关
   compounds: `${API_BASE_URL}/api/compounds`,
 };
-
-console.log('API配置已加载:', {
-  baseUrl: API_BASE_URL,
-  hostname: window.location.hostname,
-  isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-});
 
 export default API_ENDPOINTS;

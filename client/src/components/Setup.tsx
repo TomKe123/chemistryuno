@@ -46,11 +46,13 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
       });
 
       if (response.data.success) {
+        // 将密码保存到 localStorage（前端使用）
+        localStorage.setItem('adminPassword', adminPassword);
         setStep(2);
-        // 3秒后刷新页面，让新的环境变量生效
+        // 立即跳转到管理面板
         setTimeout(() => {
           window.location.href = '/admin';
-        }, 3000);
+        }, 1500);
       }
     } catch (err) {
       setError((err as any).response?.data?.error || '保存失败，请重试');

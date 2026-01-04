@@ -53,7 +53,7 @@ pnpm run deploy
 
 访问：
 - **游戏**: http://localhost:4000
-- **后端API**: http://localhost:5000
+- **后端API**: http://localhost:4001
 - **管理面板**: http://localhost:4000/admin
 
 ## 📚 详细文档

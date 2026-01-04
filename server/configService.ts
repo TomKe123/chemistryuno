@@ -95,7 +95,7 @@ function readJson(filePath: string): any | null {
     const raw = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(raw);
   } catch (err: any) {
-    console.warn(`[configService] 无法读取 ${filePath}:`, err.message);
+    // 配置文件读取失败，使用默认值
     return null;
   }
 }

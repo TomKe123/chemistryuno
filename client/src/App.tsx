@@ -22,32 +22,46 @@ const App: React.FC = () => {
   const [checkingSetup, setCheckingSetup] = useState(true);
   const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
   const isSetupRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/setup');
-  const adminPassword = process.env.REACT_APP_ADMIN || '';
-  const [adminAuthed, setAdminAuthed] = useState(() => sessionStorage.getItem('adminAuthed') === 'true');
+  // 优先使用环境变量，如果没有则从localStorage读取（通过/setup设置的密码）
+  const adminPassword = process.env.REACT_APP_ADMIN || localStorage.getItem('adminPassword') || '';
+  const [adminAuthed, setAdminAuthed] = useState(() => {
+    // 使用localStorage以持久保存登录状态
+    return localStorage.getItem('adminAuthed') === 'true';
+  });
 
   // 检查是否需要初始化设置
   useEffect(() => {
+    // 跳过管理员和设置页面的检查
+    if (isAdminRoute || isSetupRoute) {
+      setCheckingSetup(false);
+      return;
+    }
+
     const checkSetup = async () => {
       try {
         const response = await axios.get(API_ENDPOINTS.checkSetup);
-        setNeedsSetup(!response.data.isSetup);
+        const needsSetupNow = !response.data.isSetup;
+        setNeedsSetup(needsSetupNow);
         setCheckingSetup(false);
         
-        // 如果需要设置且不在设置页面，跳转到设置页面
-        if (!response.data.isSetup && !isSetupRoute) {
-          window.location.href = '/setup';
+        // 如果需要设置，使用replace避免历史记录
+        if (needsSetupNow) {
+          window.location.replace('/setup');
         }
       } catch (error) {
-        console.error('检查设置状态失败:', error);
+        // 检查设置状态失败
+        // 网络错误时仍然允许继续，避免阻塞
+        setNeedsSetup(false);
         setCheckingSetup(false);
       }
     };
 
     checkSetup();
-  }, [isSetupRoute]);
+  }, [isAdminRoute, isSetupRoute]);
 
   useEffect(() => {
-    sessionStorage.setItem('adminAuthed', adminAuthed ? 'true' : 'false');
+    // 使用localStorage持久保存登录状态
+    localStorage.setItem('adminAuthed', adminAuthed ? 'true' : 'false');
   }, [adminAuthed]);
 
   // 正在检查设置状态
@@ -115,11 +129,9 @@ const GameApp: React.FC = () => {
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      console.log('已连接到服务器');
     });
 
     newSocket.on('playerJoined', (data: any) => {
-      console.log(`${data.playerName} 加入了房间`);
     });
 
     newSocket.on('gameStarted', (data: any) => {
@@ -162,7 +174,6 @@ const GameApp: React.FC = () => {
     });
 
     newSocket.on('playerLeft', (data: any) => {
-      console.log(`${data.playerName} 离开了房间`);
     });
 
     newSocket.on('error', (message: string) => {

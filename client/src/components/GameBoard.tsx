@@ -75,7 +75,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, roomCode, playerId, so
 
       // 如果超过30秒且是当前玩家，自动摸牌
       if (remaining === 0 && isCurrentPlayer && socket) {
-        console.log('✗ 30秒超时，自动摸2张牌');
         socket.emit('drawCard', {
           roomCode,
           playerId
@@ -89,12 +88,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, roomCode, playerId, so
   const handleCardClick = async (card: string): Promise<void> => {
     if (!isCurrentPlayer) return;
 
-    console.log('🎴 点击卡牌:', card);
 
     // 检查是否是特殊卡牌（+2, +4, Au, He, Ne, Ar, Kr）
     const specialCards = ['+2', '+4', 'Au', 'He', 'Ne', 'Ar', 'Kr'];
     if (specialCards.includes(card)) {
-      console.log('⚡ 特殊卡牌，直接打出');
       // 特殊卡牌直接打出，不需要选择物质
       if (socket) {
         socket.emit('playCard', {
@@ -111,18 +108,16 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, roomCode, playerId, so
     setSelectedCard(card);
 
     try {
-      console.log('📡 请求化合物列表...');
       const response = await axios.post(API_ENDPOINTS.compounds, {
         elements: [card]
       });
 
       // 服务器返回的列表已包含对应单质和所有化合物
       const availableOptions = response.data.compounds;
-      console.log('✅ 可选物质:', availableOptions);
       setCompounds(availableOptions);
       setShowCompoundSelector(true);
     } catch (error) {
-      console.error('❌ 获取物质列表失败:', error);
+      // 获取物质列表失败
       // 即使失败，也显示空列表并提示
       setCompounds([]);
       setShowCompoundSelector(true);
@@ -131,10 +126,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, roomCode, playerId, so
 
   // 玩家选择物质后
   const handleCompoundSelect = (compound: string): void => {
-    console.log('🎯 选择物质:', compound, '使用卡牌:', selectedCard);
     
     if (socket) {
-      console.log('📤 发送playCard事件:', { roomCode, playerId, card: selectedCard, compound });
       socket.emit('playCard', {
         roomCode,
         playerId,
@@ -143,7 +136,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, roomCode, playerId, so
         playerName
       });
     } else {
-      console.error('❌ socket未连接');
     }
 
     setShowCompoundSelector(false);

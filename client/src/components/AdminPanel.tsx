@@ -65,10 +65,7 @@ const AdminPanel: React.FC = () => {
 
   useEffect(() => {
     if (draft) {
-      console.log('🔄 Draft 状态更新');
-      console.log('  - elemental_substances 存在:', !!draft.elemental_substances);
       if (draft.elemental_substances) {
-        console.log('  - elemental_substances keys:', Object.keys(draft.elemental_substances));
       }
     }
   }, [draft]);
@@ -80,12 +77,10 @@ const AdminPanel: React.FC = () => {
       const res = await axios.get(API_ENDPOINTS.config);
       const loadedConfig: Config = res.data.config;
       
-      console.log('📥 加载配置:', loadedConfig);
-      console.log('🧪 单质列表:', loadedConfig.elemental_substances);
       
       // 确保 elemental_substances 存在
       if (!loadedConfig.elemental_substances) {
-        console.warn('⚠️ 配置中没有 elemental_substances，正在创建默认值');
+        // 创建默认物质配置
         loadedConfig.elemental_substances = {
           non_metal_elements: {
             diatomic_molecules: [],
@@ -97,15 +92,12 @@ const AdminPanel: React.FC = () => {
           note: "单质分为金属单质、非金属单质和稀有气体单质"
         };
       } else {
-        console.log('✅ elemental_substances 存在，包含以下类别:');
         Object.keys(loadedConfig.elemental_substances).forEach(key => {
           if (key !== 'note') {
             const value = (loadedConfig.elemental_substances as any)[key];
             if (Array.isArray(value)) {
-              console.log(`  - ${key}: ${value.length} 项`);
             } else if (typeof value === 'object') {
               const subKeys = Object.keys(value);
-              console.log(`  - ${key}: ${subKeys.length} 个子类别 [${subKeys.join(', ')}]`);
             }
           }
         });
@@ -113,7 +105,7 @@ const AdminPanel: React.FC = () => {
       
       // 确保 game_settings 存在
       if (!loadedConfig.game_settings) {
-        console.warn('⚠️ 配置中没有 game_settings，正在创建默认值');
+        // 创建默认游戏设置
         loadedConfig.game_settings = {
           reconnect_timeout: 30000,
           host_timeout: 30000,
@@ -125,7 +117,7 @@ const AdminPanel: React.FC = () => {
       setDraft(deepClone(loadedConfig));
       setLastSavedAt(new Date());
     } catch (err) {
-      console.error('❌ 加载配置失败:', err);
+      // 加载配置失败
       setError((err as any).response?.data?.error || '加载配置失败');
     } finally {
       setLoading(false);
@@ -136,12 +128,9 @@ const AdminPanel: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      console.log('🔄 从磁盘刷新配置...');
       const res = await axios.post(API_ENDPOINTS.configRefresh);
       const loadedConfig: Config = res.data.config;
       
-      console.log('✅ 配置已刷新:', loadedConfig);
-      console.log('🧪 单质列表:', loadedConfig.elemental_substances);
       
       setConfig(loadedConfig);
       setDraft(deepClone(loadedConfig));
@@ -149,7 +138,7 @@ const AdminPanel: React.FC = () => {
       setMessage('配置已从磁盘重新加载');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      console.error('❌ 刷新配置失败:', err);
+      // 刷新配置失败
       setError((err as any).response?.data?.error || '刷新配置失败');
     } finally {
       setLoading(false);
@@ -164,7 +153,6 @@ const AdminPanel: React.FC = () => {
 
   const handleSave = async (): Promise<void> => {
     if (!draft) return;
-    console.log('💾 开始保存配置...');
     
     // 深拷贝以便清理
     const cleanedDraft = deepClone(draft);
@@ -229,12 +217,8 @@ const AdminPanel: React.FC = () => {
       })
     );
     
-    console.log('  - elemental_substances 存在:', !!cleanedDraft.elemental_substances);
     if (cleanedDraft.elemental_substances) {
-      console.log('  - metal_elements:', (cleanedDraft.elemental_substances.metal_elements as any)?.length, '项');
-      console.log('  - non_metal_elements:', Object.keys(cleanedDraft.elemental_substances.non_metal_elements || {}).length, '个类别');
     }
-    console.log('  反应数量:', Object.keys(cleanedDraft.representative_reactions || {}).length);
     
     setSaving(true);
     setMessage('');
@@ -245,11 +229,10 @@ const AdminPanel: React.FC = () => {
       setDraft(deepClone(res.data.config));
       setMessage('配置已保存 ✓');
       setLastSavedAt(new Date());
-      console.log('✅ 配置保存成功');
     } catch (err) {
       const errorMsg = (err as any).response?.data?.error || '保存失败';
       setError(errorMsg);
-      console.error('❌ 保存失败:', errorMsg);
+      // 保存失败
     } finally {
       setSaving(false);
     }
@@ -351,7 +334,6 @@ const AdminPanel: React.FC = () => {
       .map((line) => line.trim())
       .filter(Boolean);
 
-    console.log(`➕ 添加新反应: ${newReaction.reactant.trim()} -> [${partners.join(', ')}]`);
 
     setDraft((prev) => {
       const next = deepClone(prev!);
@@ -359,7 +341,6 @@ const AdminPanel: React.FC = () => {
         next.representative_reactions = {};
       }
       next.representative_reactions[newReaction.reactant.trim()] = partners;
-      console.log('✓ 反应已添加到草稿，需点击"保存配置"按钮');
       return next;
     });
     setNewReaction({ reactant: '', partners: '' });
@@ -719,11 +700,9 @@ const AdminPanel: React.FC = () => {
                   className="btn-delete"
                   onClick={() => {
                     if (window.confirm(`确定要删除反应物 "${reactant}" 吗？`)) {
-                      console.log(`🗑️ 删除反应: ${reactant}`);
                       setDraft(prev => {
                         const next = deepClone(prev!);
                         delete next.representative_reactions![reactant];
-                        console.log('✓ 反应已从草稿删除，需点击"保存配置"按钮');
                         return next;
                       });
                     }

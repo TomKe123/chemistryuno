@@ -89,7 +89,7 @@ function readJson(filePath) {
         return JSON.parse(raw);
     }
     catch (err) {
-        console.warn(`[configService] 无法读取 ${filePath}:`, err.message);
+        // 配置文件读取失败，使用默认值
         return null;
     }
 }

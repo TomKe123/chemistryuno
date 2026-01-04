@@ -74,7 +74,7 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
         setExistingSession(null);
       }
     } catch (err) {
-      console.error('检查会话失败:', err);
+      // 会话检查失败
       setExistingSession(null);
     } finally {
       setCheckingSession(false);
@@ -97,7 +97,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
   // 重新加入现有游戏
   const handleRejoinSession = (): void => {
     if (existingSession) {
-      console.log('重新加入游戏:', existingSession);
       // 正确传递参数：roomCode, playerId, playerName, isSpectator
       onGameReady(
         existingSession.roomCode, 
@@ -121,7 +120,7 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
       const response = await axios.get(API_ENDPOINTS.rooms);
       setRooms(response.data.rooms);
     } catch (err) {
-      console.error('获取房间列表失败:', err);
+      // 获取房间列表失败
     } finally {
       setLoadingRooms(false);
     }
@@ -153,16 +152,12 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
       return;
     }
     
-    console.log('📱 开始创建房间...');
-    console.log('API端点:', API_ENDPOINTS.createGame);
-    console.log('玩家名称:', playerName.trim());
     
     try {
       const response = await axios.post(API_ENDPOINTS.createGame, {
         playerName: playerName.trim()
       });
       
-      console.log('✅ 创建房间成功:', response.data);
       
       setRoomCode(response.data.roomCode);
       setPlayerId(response.data.playerId);
@@ -170,26 +165,17 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
       setIsHost(true);
       setError('');
       
-      console.log('创建房间返回的 gameState:', response.data.gameState);
       
       // 获取二维码
       try {
         const qrResponse = await axios.get(API_ENDPOINTS.gameQrcode(response.data.roomCode));
         setQrcode(qrResponse.data.qrcode);
-        console.log('✅ 二维码获取成功');
       } catch (qrErr) {
-        console.warn('⚠️ 二维码获取失败:', (qrErr as Error).message);
+        // 二维码获取失败
         // 二维码失败不影响房间创建
       }
       
     } catch (err) {
-      console.error('❌ 创建房间失败:', err);
-      console.error('错误详情:', {
-        message: (err as any).message,
-        response: (err as any).response?.data,
-        status: (err as any).response?.status,
-        url: (err as any).config?.url
-      });
       setError((err as any).response?.data?.error || (err as Error).message || '创建房间失败，请检查网络连接');
     }
   };
@@ -206,11 +192,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
       return;
     }
     
-    console.log('📱 开始加入房间...');
-    console.log('API端点:', API_ENDPOINTS.joinGame);
-    console.log('房间号:', roomToJoin);
-    console.log('玩家名称:', playerName.trim());
-    console.log('观战模式:', asSpectator);
     
     try {
       const response = await axios.post(API_ENDPOINTS.joinGame, {
@@ -219,7 +200,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
         asSpectator: asSpectator
       });
       
-      console.log('✅ 加入房间成功:', response.data);
       
       setRoomCode(response.data.roomCode);
       setPlayerId(response.data.playerId);
@@ -234,13 +214,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
       }
       
     } catch (err) {
-      console.error('❌ 加入房间失败:', err);
-      console.error('错误详情:', {
-        message: (err as any).message,
-        response: (err as any).response?.data,
-        status: (err as any).response?.status,
-        url: (err as any).config?.url
-      });
       setError((err as any).response?.data?.error || (err as Error).message || '加入房间失败，请检查网络连接');
     }
   };
@@ -266,7 +239,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(API_ENDPOINTS.gameInfo(roomCode));
-        console.log('轮询返回的房间信息:', response.data.gameState || response.data);
         
         // 处理两种可能的返回格式
         const roomData = response.data.gameState || response.data;
@@ -274,12 +246,11 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
         
         // 如果游戏已开始，触发回调（仅触发一次）
         if (roomData.gameStarted && !gameReadyTriggered) {
-          console.log('游戏已开始，准备进入游戏界面');
           setGameReadyTriggered(true);
           onGameReady(roomCode, playerId!, playerName, isSpectator);
         }
       } catch (err) {
-        console.error('轮询房间信息失败:', err);
+        // 轮询失败
         // 如果房间不存在（404），清理状态返回大厅
         if ((err as any).response?.status === 404) {
           setRoomCode('');
@@ -302,7 +273,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onGameReady, playerName, setPlaye
     const maxPlayers = gameState.maxPlayers ?? 12;
     const players = gameState.players ?? [];
     
-    console.log('等待房间渲染 - playerCount:', playerCount, 'players:', players, 'isHost:', isHost);
     
     return (
       <div className="lobby-container">

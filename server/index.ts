@@ -18,12 +18,15 @@ const server = http.createServer(app);
 const allowedOrigins: (string | RegExp)[] = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:4000',
+  'http://127.0.0.1:4000',
   // 支持局域网IP访问
-  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
-  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
-  /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:3000$/,
-  // 支持任意IP地址（开发环境）
-  /^http:\/\/[\d.]+:3000$/
+  /^http:\/\/192\.168\.\d+\.\d+:(3000|4000)$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:(3000|4000)$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:(3000|4000)$/,
+  // 支持任意IP地址（开发和生产环境）
+  /^http:\/\/[\d.]+(:(3000|4000))?$/,
+  /^https?:\/\/[\w.-]+(:(3000|4000|80|443))?$/
 ];
 
 const io = new SocketIOServer(server, {
@@ -45,7 +48,7 @@ const io = new SocketIOServer(server, {
       if (isAllowed) {
         callback(null, true);
       } else {
-        console.log(`🚫 拒绝的来源: ${origin}`);
+        
         callback(null, true); // 开发环境仍然允许，生产环境应该设为 false
       }
     },
@@ -535,7 +538,7 @@ app.post('/api/compounds', (req: Request, res: Response) => {
     const compounds = database.getCompoundsByElements(elements);
     res.json({ compounds });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '获取化合物失败' });
   }
 });
 
@@ -607,8 +610,6 @@ CONFIG_PATH=./config.json
     // 写入 .env 文件
     fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
     
-    console.log('✅ 管理员密码已保存到 .env 文件');
-    
     // 更新当前进程的环境变量（仅对当前请求有效，下次启动才完全生效）
     process.env.REACT_APP_ADMIN = adminPassword;
     
@@ -617,8 +618,7 @@ CONFIG_PATH=./config.json
       message: '设置已保存，页面将自动刷新' 
     });
   } catch (error: any) {
-    console.error('❌ 保存设置失败:', error);
-    res.status(500).json({ error: '保存失败: ' + error.message });
+    res.status(500).json({ error: '保存失败，请重试' });
   }
 });
 
@@ -626,11 +626,9 @@ CONFIG_PATH=./config.json
 app.post('/api/config/refresh', (req: Request, res: Response) => {
   try {
     const refreshedConfig = configService.refreshFromDisk();
-    console.log('🔄 配置已从磁盘刷新');
     res.json({ success: true, config: refreshedConfig });
   } catch (err: any) {
-    console.error('❌ 刷新配置失败:', err);
-    res.status(500).json({ error: '刷新配置失败: ' + err.message });
+    res.status(500).json({ error: '刷新配置失败，请重试' });
   }
 });
 
@@ -645,7 +643,7 @@ app.put('/api/config', (req: Request, res: Response) => {
     const saved = configService.saveConfig(incoming);
     res.json({ success: true, config: saved });
   } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: '配置格式错误或保存失败' });
   }
 });
 
@@ -655,7 +653,7 @@ app.get('/api/elements', (req: Request, res: Response) => {
     const elements = configService.getElementsList();
     res.json({ elements });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '获取元素列表失败' });
   }
 });
 
@@ -733,7 +731,7 @@ app.post('/api/reaction/check', (req: Request, res: Response) => {
       canReact: canReact
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '检查反应失败' });
   }
 });
 
@@ -753,7 +751,7 @@ app.get('/api/game/:roomCode/stats', (req: Request, res: Response) => {
 
 // WebSocket 连接处理
 io.on('connection', (socket) => {
-  console.log('✓ 玩家连接:', socket.id);
+  
   
   socket.on('joinRoom', (data: any) => {
     const { roomCode, playerId, playerName } = data;
@@ -784,7 +782,7 @@ io.on('connection', (socket) => {
       const cleanupKey = roomCode;
       const cleanup = pendingCleanup.get(cleanupKey);
       if (cleanup && cleanup.isHost) {
-        console.log(`✓ 房主 ${playerName} 已重新连接，取消房间关闭超时`);
+        
         clearTimeout(cleanup.timeoutId);
         pendingCleanup.delete(cleanupKey);
       }
@@ -793,19 +791,19 @@ io.on('connection', (socket) => {
       const cleanupKey = `${roomCode}:${playerId}`;
       const cleanup = pendingCleanup.get(cleanupKey);
       if (cleanup) {
-        console.log(`✓ 玩家 ${playerName} 已重新连接，取消昵称释放超时`);
+        
         clearTimeout(cleanup.timeoutId);
         pendingCleanup.delete(cleanupKey);
       }
       
       // 无论是否有超时清理，都要确保标记为在线
       if (player.isOffline) {
-        console.log(`✓ 玩家 ${playerName} 从离线状态恢复为在线`);
+        
         player.isOffline = false;
       }
     } else if (isSpectator) {
       // 观战者加入
-      console.log(`📺 观战者 ${playerName} 已加入房间 ${roomCode}`);
+      
     }
     
     // 向所有玩家广播玩家/观战者加入
@@ -871,10 +869,10 @@ io.on('connection', (socket) => {
     const { roomCode, playerId, card, compound } = data;
     const gameState = gameSessions.get(roomCode);
     
-    console.log(`🎮 playCard事件 - 房间:${roomCode}, 玩家:${playerId}, 卡牌:${card}, 物质:${compound}`);
+    
     
     if (!gameState || gameState.currentPlayer !== playerId) {
-      console.log(`❌ 不是玩家${playerId}的回合，当前回合:${gameState?.currentPlayer}`);
+      
       socket.emit('error', '不是你的回合');
       return;
     }
@@ -883,7 +881,7 @@ io.on('connection', (socket) => {
     
     // 检查卡牌是否在手中
     if (!player.hand.includes(card)) {
-      console.log(`❌ 玩家${playerId}没有卡牌${card}，手牌:${player.hand.join(',')}`);
+      
       socket.emit('error', '你没有这张卡牌');
       return;
     }
@@ -937,7 +935,7 @@ io.on('connection', (socket) => {
       }
     }
     
-    console.log(`✅ 验证通过，打出卡牌${card}，物质${compound}`);
+    
     
     // 移除卡牌/所需元素
     if (compound && !specialCards.includes(card)) {
@@ -1018,7 +1016,7 @@ io.on('connection', (socket) => {
     
     // 玩家无法出牌而摸牌，清除场上物质，下家可自由出牌
     if (gameState.lastCompound) {
-      console.log(`玩家${playerId}无法打出反应物质，清除场上物质: ${gameState.lastCompound}`);
+      
       gameState.lastCompound = null;
     }
     
@@ -1030,7 +1028,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('disconnect', () => {
-    console.log('✗ 玩家断开连接:', socket.id);
+    
     
     // 获取断开连接的玩家信息
     const playerInfo = socketToPlayer.get(socket.id);
@@ -1048,11 +1046,11 @@ io.on('connection', (socket) => {
     // 如果是房主离开，设置30秒后关闭房间
     if (isHost) {
       const settings = getGameSettings();
-      console.log(`✗ 房主 ${playerName} 离开，${settings.host_timeout / 1000}秒后将关闭房间 ${roomCode}`);
+      
       
       // 设置超时后关闭房间
       const timeoutId = setTimeout(() => {
-        console.log(`⏱️ ${settings.host_timeout / 1000}秒超时，关闭房间 ${roomCode}`);
+        
         
         const currentGameState = gameSessions.get(roomCode);
         if (!currentGameState) return;
@@ -1077,7 +1075,7 @@ io.on('connection', (socket) => {
         gameSessions.delete(roomCode);
         pendingCleanup.delete(roomCode);
         
-        console.log(`✓ 房间 ${roomCode} 已关闭`);
+        
       }, settings.host_timeout);
       
       // 保存超时ID用于可能的取消
@@ -1090,7 +1088,7 @@ io.on('connection', (socket) => {
       socketToPlayer.delete(socket.id);
     } else {
       // 普通玩家或观战者离开，设置30秒后释放昵称
-      console.log(`✗ 玩家 ${playerName} 离开房间 ${roomCode}，30秒后释放昵称`);
+      
       
       // 标记玩家为离线状态，不立即删除
       const playerIndex = gameState.players.findIndex(p => p.id === playerId);
@@ -1113,7 +1111,7 @@ io.on('connection', (socket) => {
       const settings = getGameSettings();
       // 设置超时后释放昵称
       const timeoutId = setTimeout(() => {
-        console.log(`⏱️ ${settings.reconnect_timeout / 1000}秒超时，释放玩家昵称 ${playerName}`);
+        
         
         const currentGameState = gameSessions.get(roomCode);
         if (!currentGameState) {
@@ -1152,7 +1150,7 @@ io.on('connection', (socket) => {
         // 广播更新游戏状态
         broadcastGameStateToAll(io, roomCode, currentGameState);
         
-        console.log(`✓ 玩家昵称 ${playerName} 已释放`);
+        
       }, settings.reconnect_timeout);
       
       // 保存超时ID用于可能的取消
@@ -1251,14 +1249,12 @@ app.use((req: Request, res: Response) => {
 
 // 错误处理
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Server Error:', err.message);
   res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
+    error: 'Internal Server Error'
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4001;
 server.listen(PORT, () => {
   console.log(`✓ 服务器运行在 http://localhost:${PORT}`);
   console.log(`✓ WebSocket 服务已启动，等待连接...`);
