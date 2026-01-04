@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "chcp 65001 >nul && ts-node index.ts || ts-node index.ts",
-    "dev": "chcp 65001 >nul && nodemon --exec ts-node index.ts || nodemon --exec ts-node index.ts",
+    "dev": "chcp 65001 >nul && nodemon index.ts || nodemon index.ts",
     "build": "tsc"
   },
   "keywords": [],
