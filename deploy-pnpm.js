@@ -105,8 +105,8 @@ async function deploy() {
     output: process.stdout
   });
   
-  readline.question('\n是否立即启动服务？(y/N) ', (answer) => {
-    readline.close();
+  //readline.question('\n是否立即启动服务？(y/N) ', (answer) => {
+    //readline.close();
     
     if (true) {
       log('green', '\n[→] 正在启动服务...\n');
