@@ -252,11 +252,11 @@ app.get('/', (req: Request, res: Response) => {
         </div>
 
         <div class="info-box">
-          <strong>⚠️ 注意：</strong> 前端应在 <a href="http://localhost:3000" style="color: #d97706; font-weight: bold;">http://localhost:3000</a> 运行。
+          <strong>⚠️ 注意：</strong> 前端应在 <a href="http://localhost:4000" style="color: #d97706; font-weight: bold;">http://localhost:4000</a> 运行。
           如看不到游戏界面，请确保执行了 <code>npm start</code> 命令。
         </div>
 
-        <a href="http://localhost:3000" class="frontend-link">▶️ 进入游戏</a>
+        <a href="http://localhost:4000" class="frontend-link">▶️ 进入游戏</a>
       </div>
     </body>
     </html>
@@ -419,7 +419,7 @@ app.get('/api/game/:roomCode/qrcode', async (req: Request, res: Response) => {
   
   try {
     // 生成加入链接
-    const joinUrl = `http://localhost:3000/join/${roomCode}`;
+    const joinUrl = `http://localhost:4000/join/${roomCode}`;
     
     // 生成二维码（Data URL格式）
     const qrcodeDataUrl = await QRCode.toDataURL(joinUrl, {
@@ -577,7 +577,7 @@ NODE_ENV=production
 PORT=5000
 REACT_APP_API_URL=http://localhost:5000
 REACT_APP_ADMIN=${adminPassword}
-ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+ALLOWED_ORIGINS=http://localhost:4000,http://127.0.0.1:4000
 LOG_LEVEL=info
 MAX_PLAYERS=12
 GAME_TIMEOUT=3600000

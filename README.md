@@ -6,11 +6,11 @@
 
 | 🎯 需求 | 📖 查看文档 |
 |--------|-----------|
-| � **浏览所有文档** | [文档中心](docs/README.md) |
+| 📄 **浏览所有文档** | [文档中心](docs/README.md) |
 | 🚀 **想玩游戏？** | [快速开始](docs/GETTING_STARTED.md) |
 | 📦 **从npm迁移到pnpm？** | [pnpm迁移指南](docs/PNPM_MIGRATION_GUIDE.md) |
 | 🔷 **TypeScript迁移说明** | [TypeScript迁移总结](TYPESCRIPT_MIGRATION_SUMMARY.md) |
-| �📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
+| 📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
 | 🔧 **修改反应规则？** | [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) |
 | 🌐 **生产环境部署？** | [部署指南](docs/DEPLOYMENT_GUIDE.md) |
 | ⚡ **快速部署？** | [快速部署](docs/QUICK_DEPLOY.md) |
@@ -143,7 +143,7 @@ pnpm run dev
 ### 游戏入门
 
 #### 电脑端
-1. 打开浏览器访问 `http://localhost:3000`
+1. 打开浏览器访问 `http://localhost:4000`
 2. 输入玩家名称
 3. 选择"创建游戏"并选择玩家数量
 4. 点击"创建游戏"按钮
@@ -154,14 +154,14 @@ pnpm run dev
 2. **获取电脑IP地址**：
    - Windows: 运行 `ipconfig`，查看 IPv4 地址
    - macOS/Linux: 运行 `ifconfig` 或 `ip addr`
-3. **手机浏览器访问**：`http://[电脑IP]:3000`
-   - 例如：`http://192.168.1.100:3000`
+3. **手机浏览器访问**：`http://[电脑IP]:4000`
+   - 例如：`http://192.168.1.100:4000`
 4. 扫描房间二维码或输入房间号加入游戏
 
 > 💡 提示：创建房间后会自动生成二维码，手机扫码即可快速加入！
 
 #### 管理面板（修改游戏配置）
-1. 访问 `http://localhost:3000/admin`
+1. 访问 `http://localhost:4000/admin`
 2. 输入管理员密码（在 `.env` 文件中配置 `REACT_APP_ADMIN`）
 3. 可以添加、修改、删除化学反应规则
 4. 点击"保存配置"使修改生效
