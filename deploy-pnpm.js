@@ -8,6 +8,16 @@ const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// 将 npm 缓存指向当前项目目录，避免全局缓存权限问题
+const cacheDir = path.join(process.cwd(), '.npm-cache');
+try {
+  fs.mkdirSync(cacheDir, { recursive: true });
+  process.env.NPM_CONFIG_CACHE = cacheDir;
+  process.env.npm_config_cache = cacheDir;
+} catch (err) {
+  // 若创建失败，不阻塞流程，后续命令会给出更具体错误
+}
+
 // 颜色输出
 const colors = {
   reset: '\x1b[0m',
@@ -99,41 +109,37 @@ async function deploy() {
   log('cyan', '  后端：http://localhost:5000');
   console.log('');
   
-  // 询问是否自动启动
-  const readline = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  
-  //readline.question('\n是否立即启动服务？(y/N) ', (answer) => {
-    //readline.close();
-    
-    if (true) {
-      log('green', '\n[→] 正在启动服务...\n');
-      
-      // 启动后端
-      const backend = spawn('node', ['server/dist/index.js'], {
+  // 自动启动服务（如需交互式可改为 readline 询问）
+  const autoStart = true;
+
+  if (autoStart) {
+    log('green', '\n[→] 正在启动服务...\n');
+
+    // 启动后端
+    spawn('node', ['server/dist/index.js'], {
+      stdio: 'inherit',
+      shell: true,
+      env: process.env
+    });
+
+    // 等待2秒后启动前端
+    setTimeout(() => {
+      spawn('npx', ['serve', '-s', 'client/build', '-l', '4000'], {
         stdio: 'inherit',
-        shell: true
+        shell: true,
+        env: process.env
       });
-      
-      // 等待2秒后启动前端
-      setTimeout(() => {
-        const frontend = spawn('npx', ['serve', '-s', 'client/build', '-l', '4000'], {
-          stdio: 'inherit',
-          shell: true
-        });
-        
-        console.log('');
-        log('green', '服务已启动！');
-        log('cyan', '访问 http://localhost:4000');
-        log('yellow', '按 Ctrl+C 停止服务');
-      }, 2000);
-    } else {
-      log('cyan', '\n请手动启动服务：');
-      log('cyan', '  pnpm run serve');
-    }
-  };
+
+      console.log('');
+      log('green', '服务已启动！');
+      log('cyan', '访问 http://localhost:4000');
+      log('yellow', '按 Ctrl+C 停止服务');
+    }, 2000);
+  } else {
+    log('cyan', '\n请手动启动服务：');
+    log('cyan', '  pnpm run serve');
+  }
+}
 
 
 deploy().catch(err => {
