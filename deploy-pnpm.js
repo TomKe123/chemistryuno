@@ -108,7 +108,7 @@ async function deploy() {
   readline.question('\n是否立即启动服务？(y/N) ', (answer) => {
     readline.close();
     
-    if (answer.toLowerCase() === 'y') {
+    if (true) {
       log('green', '\n[→] 正在启动服务...\n');
       
       // 启动后端
