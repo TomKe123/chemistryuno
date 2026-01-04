@@ -10,6 +10,7 @@
     "dev": "concurrently \"cd server && pnpm run dev\" \"cd client && pnpm start\"",
     "build": "cd client && pnpm run build",
     "build:server": "cd server && tsc",
+    "build:all": "pnpm run build && pnpm run build:server",
     "install-all": "pnpm install",
     "clean": "rm -rf server/node_modules client/node_modules node_modules server/pnpm-lock.yaml client/pnpm-lock.yaml pnpm-lock.yaml server/dist",
     "update": "pnpm update -r",
@@ -20,7 +21,11 @@
     "docker:up": "docker-compose -f docker-compose.production.yml up -d",
     "docker:down": "docker-compose -f docker-compose.production.yml down",
     "docker:logs": "docker-compose -f docker-compose.production.yml logs -f",
-    "docker:restart": "docker-compose -f docker-compose.production.yml restart"
+    "docker:restart": "docker-compose -f docker-compose.production.yml restart",
+    "deploy:prod": "pwsh -File deploy-production.ps1",
+    "deploy:prod:clean": "pwsh -File deploy-production.ps1 -Clean",
+    "deploy:prod:ssl": "pwsh -File deploy-production.ps1 -WithSSL",
+    "deploy:prod:skip-build": "pwsh -File deploy-production.ps1 -SkipBuild"
   },
   "keywords": [
     "chemistry",
