@@ -45,6 +45,19 @@ async function deploy() {
   
   log('cyan', `平台: ${process.platform} | Node.js: ${process.version}`);
   
+  // 清理npm遗留配置（Linux/Mac）
+  if (process.platform !== 'win32') {
+    log('cyan', '\n清理npm配置...');
+    try {
+      execSync('npm config delete _-init-module 2>/dev/null || true', { stdio: 'ignore', shell: true });
+      execSync('npm config delete init.module 2>/dev/null || true', { stdio: 'ignore', shell: true });
+      execSync('npm config delete --global _-init-module 2>/dev/null || true', { stdio: 'ignore', shell: true });
+      execSync('npm config delete --global init.module 2>/dev/null || true', { stdio: 'ignore', shell: true });
+    } catch (e) {
+      // 忽略错误
+    }
+  }
+  
   // 检查 pnpm
   if (!exec('pnpm --version', '\n检查 pnpm...')) {
     log('red', '[✗] 请先安装 pnpm: npm install -g pnpm');

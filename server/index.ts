@@ -549,9 +549,38 @@ app.get('/api/config', (req: Request, res: Response) => {
 
 // 检查是否已完成初始化设置
 app.get('/api/setup/check', (req: Request, res: Response) => {
-  const adminPassword = process.env.REACT_APP_ADMIN;
-  const isSetup = adminPassword && adminPassword !== 'your_admin_password_here' && adminPassword.length > 0;
-  res.json({ isSetup });
+  try {
+    // 检查多个可能的.env文件位置
+    const envPaths = [
+      path.join(__dirname, '..', '.env'),
+      path.join(__dirname, '..', 'client', '.env.production'),
+      path.join(process.cwd(), '.env')
+    ];
+    
+    let adminPassword = '';
+    
+    for (const envPath of envPaths) {
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const match = envContent.match(/REACT_APP_ADMIN=(.+)/);
+        if (match && match[1]) {
+          adminPassword = match[1].trim();
+          break;
+        }
+      }
+    }
+    
+    // 如果文件中没有找到，使用环境变量
+    if (!adminPassword) {
+      adminPassword = process.env.REACT_APP_ADMIN || '';
+    }
+    
+    const isSetup = adminPassword && adminPassword !== 'your_admin_password_here' && adminPassword.length > 0;
+    res.json({ isSetup, message: isSetup ? '已设置' : '需要初始化' });
+  } catch (error) {
+    // 出错时假定未设置
+    res.json({ isSetup: false, message: '检查失败，需要初始化' });
+  }
 });
 
 // 初始化设置 - 保存管理员密码
@@ -563,59 +592,69 @@ app.post('/api/setup', (req: Request, res: Response) => {
   }
 
   try {
-    // 读取 .env 文件路径
-    const envPath = path.join(__dirname, '..', '.env');
-    const envExamplePath = path.join(__dirname, '..', '.env.example');
+    // 定义需要更新的.env文件路径
+    const envFiles = [
+      { path: path.join(__dirname, '..', '.env'), name: '根目录.env' },
+      { path: path.join(__dirname, '..', 'client', '.env.production'), name: 'client/.env.production' }
+    ];
     
-    let envContent = '';
-    
-    // 如果 .env 不存在，从 .env.example 复制
-    if (!fs.existsSync(envPath)) {
-      if (fs.existsSync(envExamplePath)) {
-        envContent = fs.readFileSync(envExamplePath, 'utf8');
-      } else {
-        // 创建默认 .env 内容
-        envContent = `# 化学UNO - 环境变量配置
+    const defaultEnvContent = `# 化学UNO - 环境变量配置
 NODE_ENV=production
-PORT=5000
-REACT_APP_API_URL=http://localhost:5000
+PORT=4001
 REACT_APP_ADMIN=${adminPassword}
 ALLOWED_ORIGINS=http://localhost:4000,http://127.0.0.1:4000
-LOG_LEVEL=info
-MAX_PLAYERS=12
-GAME_TIMEOUT=3600000
-CONFIG_PATH=./config.json
 `;
+    
+    const clientEnvContent = `REACT_APP_ADMIN=${adminPassword}
+PORT=4000
+BROWSER=none
+SKIP_PREFLIGHT_CHECK=true
+DISABLE_ESLINT_PLUGIN=true
+`;
+    
+    // 更新所有.env文件
+    for (const envFile of envFiles) {
+      let envContent = '';
+      
+      if (fs.existsSync(envFile.path)) {
+        envContent = fs.readFileSync(envFile.path, 'utf8');
+      } else {
+        // 根据文件类型使用不同的默认内容
+        envContent = envFile.name.includes('client') ? clientEnvContent : defaultEnvContent;
       }
-    } else {
-      envContent = fs.readFileSync(envPath, 'utf8');
-    }
-
-    // 更新或添加 REACT_APP_ADMIN
-    const lines = envContent.split('\n');
-    let found = false;
-    
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith('REACT_APP_ADMIN=')) {
-        lines[i] = `REACT_APP_ADMIN=${adminPassword}`;
-        found = true;
-        break;
+      
+      // 更新或添加 REACT_APP_ADMIN
+      const lines = envContent.split('\n');
+      let found = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('REACT_APP_ADMIN=')) {
+          lines[i] = `REACT_APP_ADMIN=${adminPassword}`;
+          found = true;
+          break;
+        }
       }
+      
+      if (!found) {
+        lines.push(`REACT_APP_ADMIN=${adminPassword}`);
+      }
+      
+      // 确保目录存在
+      const dir = path.dirname(envFile.path);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      // 写入文件
+      fs.writeFileSync(envFile.path, lines.join('\n'), 'utf8');
     }
     
-    if (!found) {
-      lines.push(`REACT_APP_ADMIN=${adminPassword}`);
-    }
-    
-    // 写入 .env 文件
-    fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
-    
-    // 更新当前进程的环境变量（仅对当前请求有效，下次启动才完全生效）
+    // 更新当前进程的环境变量
     process.env.REACT_APP_ADMIN = adminPassword;
     
     res.json({ 
       success: true, 
-      message: '设置已保存，页面将自动刷新' 
+      message: '设置已保存，请重启服务以生效' 
     });
   } catch (error: any) {
     res.status(500).json({ error: '保存失败，请重试' });

@@ -49,10 +49,11 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
         // 将密码保存到 localStorage（前端使用）
         localStorage.setItem('adminPassword', adminPassword);
         setStep(2);
-        // 立即跳转到管理面板
+        // 提示用户需要重启服务
         setTimeout(() => {
-          window.location.href = '/admin';
-        }, 1500);
+          alert('设置已保存！\n\n请重启服务以使密码生效：\n1. 停止当前服务（Ctrl+C）\n2. 重新运行: node start.js 或 pnpm run deploy');
+          window.location.href = '/';
+        }, 2000);
       }
     } catch (err) {
       setError((err as any).response?.data?.error || '保存失败，请重试');
@@ -66,8 +67,10 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
         <div className="setup-card success">
           <div className="success-icon">✓</div>
           <h1>设置完成！</h1>
-          <p>管理员密码已保存</p>
-          <p className="redirect-hint">正在跳转到管理面板...</p>
+          <p>管理员密码已保存到配置文件</p>
+          <p className="redirect-hint" style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
+            ⚠️ 请重启服务以使密码生效
+          </p>
           <div className="loading-spinner"></div>
         </div>
       </div>
