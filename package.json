@@ -1,25 +1,15 @@
 {
   "name": "chemistry-uno",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "一个将化学知识融入的创意卡牌游戏",
   "main": "server/index.ts",
   "scripts": {
-    "start": "concurrently \"pnpm run server\" \"pnpm run client\"",
-    "server": "cd server && pnpm start",
-    "client": "cd client && pnpm start",
     "dev": "concurrently \"cd server && pnpm run dev\" \"cd client && pnpm start\"",
-    "build": "cd client && pnpm run build",
-    "build:server": "cd server && tsc",
-    "build:all": "pnpm run build && pnpm run build:server",
-    "install-all": "pnpm install",
-    "clean": "rm -rf server/node_modules client/node_modules node_modules server/pnpm-lock.yaml client/pnpm-lock.yaml pnpm-lock.yaml server/dist",
-    "update": "pnpm update -r",
-    "audit": "pnpm audit",
-    "audit-fix": "pnpm audit --fix",
-    "health": "ts-node healthcheck.ts",
-    "serve": "concurrently \"cd server && node dist/index.js\" \"npx serve -s client/build -l 4000\"",
-    "deploy:pnpm": "node deploy-pnpm.js",
-    "deploy:docker": "node deploy-docker.js"
+    "start": "concurrently \"cd server && pnpm start\" \"cd client && pnpm start\"",
+    "build": "pnpm run build:client && pnpm run build:server",
+    "build:client": "cd client && pnpm run build",
+    "build:server": "cd server && pnpm run build",
+    "deploy": "node deploy-pnpm.js"
   },
   "keywords": [
     "chemistry",
@@ -31,19 +21,15 @@
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "serve": "^14.2.0"
+  },
   "devDependencies": {
-    "concurrently": "^7.6.0",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.6",
-    "ts-node": "^10.9.2"
+    "concurrently": "^7.6.0"
   },
   "engines": {
-    "node": ">=14.0.0",
+    "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.15.0",
-  "repository": {
-    "type": "git",
-    "url": ""
-  }
+  "packageManager": "pnpm@8.15.0"
 }
