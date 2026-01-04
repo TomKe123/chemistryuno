@@ -27,8 +27,9 @@ COPY server/ ./
 # 阶段3: 生产环境镜像
 FROM node:18-alpine
 
-# 安装 nginx 用于服务前端静态文件
-RUN apk add --no-cache nginx
+# 安装 pnpm 和 serve
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate && \
+    npm install -g serve
 
 # 设置工作目录
 WORKDIR /app
@@ -43,20 +44,13 @@ COPY --from=client-builder /app/client/build ./client/build
 COPY config.json ./
 COPY package.json ./
 
-# 创建 nginx 配置
-RUN mkdir -p /etc/nginx/conf.d && \
-    mkdir -p /run/nginx && \
-    mkdir -p /var/log/nginx
-
-# 创建 nginx 配置文件
-COPY nginx.conf /etc/nginx/nginx.conf
-
 # 暴露端口
-EXPOSE 80 5000
+EXPOSE 4000 5000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# 启动命令
+# 启动应用（后端和前端）
+CMD sh -c "node server/dist/index.js & serve -s client/build -l 4000"# 启动命令
 CMD nginx && cd server && node index.js

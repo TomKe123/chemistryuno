@@ -8,51 +8,171 @@
 
 - ✅ 已安装 Node.js >= 14.0
 - ✅ 已安装 pnpm >= 8.0
-- ✅ 已安装 Docker 和 Docker Compose
+- ✅ 根据模式选择安装相应工具
 
 ### 部署步骤
 
 ```bash
-# 1. 克隆或进入项目目录
+# 1. 进入项目目录
 cd chemistryuno
 
 # 2. 安装依赖
 pnpm install
 
-# 3. 一键部署到生产环境
-pnpm run deploy:prod
+# 3. 选择部署模式
+
+# Docker 部署（推荐）
+pnpm run prod:deploy:docker
+
+# 或 PM2 部署（Linux/macOS）
+pnpm run prod:deploy:pm2
+
+# 或 Systemd 部署（Linux）
+pnpm run prod:deploy:systemd
 
 # 完成！服务将自动构建并启动
 ```
 
-### 部署选项
+### 部署模式快速比较
+
+```
+Docker     | 生产级隔离 | 需要 Docker | 最推荐
+PM2        | 轻量级    | 仅需 Node.js | Linux/macOS
+Systemd    | 系统集成  | Linux only | Linux 生产
+Direct     | 开发模式  | 仅需 Node.js | 测试用
+```
+
+## 🐳 Docker 部署（推荐）
+
+### 要求
+- Docker >= 20.0
+- Docker Compose >= 2.0
+
+### 3 步启动
 
 ```bash
-# 标准部署
-pnpm run deploy:prod
+# 1. 部署
+pnpm run prod:deploy:docker
 
-# 清理后重新部署
-pnpm run deploy:prod:clean
+# 2. 查看状态
+pnpm run prod:status docker
 
-# 启用 SSL 部署
-pnpm run deploy:prod:ssl
-
-# 跳过构建直接部署（适用于已构建的项目）
-pnpm run deploy:prod:skip-build
-
-# 查看帮助
-node deploy.js --help
+# 3. 访问
+# http://localhost
+# http://localhost:5000
 ```
 
-### 访问应用
+### 管理服务
 
-```
-前端: http://localhost
-后端 API: http://localhost:5000
-管理面板: http://localhost/admin
+```bash
+# 查看日志
+pnpm run prod:logs docker
+
+# 重启服务
+pnpm run prod:restart docker
+
+# 停止服务
+pnpm run prod:stop docker
 ```
 
-## 🐳 仅使用 Docker 部署
+## 🚀 PM2 部署（Linux/macOS）
+
+### 要求
+- Node.js >= 14.0
+- PM2: `npm install -g pm2`
+
+### 3 步启动
+
+```bash
+# 1. 安装 PM2
+npm install -g pm2
+
+# 2. 部署
+pnpm run prod:deploy:pm2
+
+# 3. 访问
+# http://localhost:5000 (后端)
+# http://localhost:3000 (前端)
+```
+
+### 管理服务
+
+```bash
+# 查看日志
+pnpm run prod:logs pm2
+
+# 查看状态
+pnpm run prod:status pm2
+
+# 重启服务
+pnpm run prod:restart pm2
+```
+
+## 🐧 Systemd 部署（Linux Only）
+
+### 要求
+- Linux with systemd (Ubuntu 18.04+, Debian 10+)
+- Node.js >= 14.0
+
+### 部署
+
+```bash
+pnpm run prod:deploy:systemd
+```
+
+脚本会输出需要执行的 systemctl 命令。
+
+### 管理服务
+
+```bash
+# 查看状态
+sudo systemctl status chemistry-uno
+
+# 查看日志
+sudo journalctl -u chemistry-uno -f
+
+# 重启
+sudo systemctl restart chemistry-uno
+```
+
+## 🔧 部署后配置
+
+### 环境变量
+
+```bash
+# 复制环境模板
+cp .env.production.example .env.production
+
+# 编辑配置
+nano .env.production
+```
+
+### Nginx 反向代理（可选）
+
+```bash
+# 如果需要使用 80 端口或配置 HTTPS
+# 参考完整指南中的 Nginx 配置部分
+```
+
+## 📊 部署状态检查
+
+```bash
+# 健康检查
+pnpm run prod:health
+
+# 查看日志
+pnpm run prod:logs docker  # Docker
+pnpm run prod:logs pm2     # PM2
+
+# 查看状态
+pnpm run prod:status docker
+```
+
+## 🆘 常见问题
+
+### Q: 部署失败，提示缺少 Docker？
+
+**A:**
 
 ## 🔧 快速配置Nginx（可选）
 

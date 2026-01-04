@@ -17,16 +17,9 @@
     "audit": "pnpm audit",
     "audit-fix": "pnpm audit --fix",
     "health": "ts-node healthcheck.ts",
-    "docker:build": "docker-compose -f docker-compose.production.yml build",
-    "docker:up": "docker-compose -f docker-compose.production.yml up -d",
-    "docker:down": "docker-compose -f docker-compose.production.yml down",
-    "docker:logs": "docker-compose -f docker-compose.production.yml logs -f",
-    "docker:restart": "docker-compose -f docker-compose.production.yml restart",
-    "deploy:prod": "node deploy.js",
-    "deploy:prod:no-docker": "node deploy.js --no-docker",
-    "deploy:prod:clean": "node deploy.js --clean",
-    "deploy:prod:ssl": "node deploy.js --with-ssl",
-    "deploy:prod:skip-build": "node deploy.js --skip-build"
+    "serve": "concurrently \"cd server && node dist/index.js\" \"npx serve -s client/build -l 4000\"",
+    "deploy:pnpm": "node deploy-pnpm.js",
+    "deploy:docker": "node deploy-docker.js"
   },
   "keywords": [
     "chemistry",

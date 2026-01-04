@@ -12,7 +12,7 @@
 | 🔷 **TypeScript迁移说明** | [TypeScript迁移总结](TYPESCRIPT_MIGRATION_SUMMARY.md) |
 | 📱 **手机玩游戏？** | [移动端访问](docs/MOBILE_ACCESS_GUIDE.md) |
 | 🔧 **修改反应规则？** | [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) |
-| 🌐 **生产环境部署？** | [部署指南](docs/DEPLOYMENT_GUIDE.md) |
+| 🌐 **生产环境部署？** | [生产部署指南](docs/PRODUCTION_DEPLOYMENT.md) |
 | ⚡ **快速部署？** | [快速部署](docs/QUICK_DEPLOY.md) |
 | ⚠️ **看不到WebUI？** | [WebUI设置](docs/WEBUI_SETUP.md) |
 | 🎮 **游戏规则？** | 👇 下方详见 |
@@ -20,6 +20,50 @@
 | 📋 **项目概览？** | [项目总结](docs/PROJECT_SUMMARY.md) |
 | 🔧 **安装依赖？** | [安装指南](docs/INSTALLATION_GUIDE.md) |
 | ⚡ **快速查询？** | [快速参考](docs/QUICK_REFERENCE.md) |
+
+## 🚀 快速开始
+
+### 开发环境
+
+```bash
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm run dev
+```
+
+访问 http://localhost:3000
+
+### 生产部署
+
+Chemistry UNO 提供两种独立的部署方案：
+
+#### 方案一：PNPM 部署（推荐用于开发/测试）
+
+**不需要 Docker**，仅需 Node.js 和 pnpm：
+
+```bash
+pnpm run deploy:pnpm
+```
+
+访问：
+- 前端: http://localhost:4000
+- 后端: http://localhost:5000
+
+#### 方案二：Docker 部署（推荐用于生产环境）
+
+**需要 Docker 和 Docker Compose**：
+
+```bash
+pnpm run deploy:docker
+```
+
+访问：
+- 前端: http://localhost:4000
+- 后端: http://localhost:5000
+
+详细说明请查看 [生产部署指南](docs/PRODUCTION_DEPLOYMENT.md)
 
 ## 📋 项目概述
 
@@ -136,26 +180,50 @@ pnpm run dev
 # 后端：http://localhost:5000
 ```
 
-### 生产环境部署（跨平台）
+### 生产环境部署
+
+#### 快速部署
 
 ```bash
-# Docker 部署（推荐 - 需要 Docker）
-pnpm run deploy:prod
+# 默认 Docker 部署
+pnpm run prod:deploy:docker
 
-# 无 Docker 部署（仅需 Node.js 和 pnpm）
-pnpm run deploy:prod:no-docker
+# PM2 部署（Linux/macOS）
+pnpm run prod:deploy:pm2
 
-# 其他部署选项
-pnpm run deploy:prod:clean      # 清理后重新部署（Docker）
-pnpm run deploy:prod:ssl        # 启用SSL部署（Docker）
-pnpm run deploy:prod:skip-build # 跳过构建直接部署
+# Systemd 部署（Linux）
+pnpm run prod:deploy:systemd
+
+# 旧版本支持（仅 Docker 或无 Docker）
+pnpm run deploy:prod          # Docker 模式
+pnpm run deploy:prod:no-docker # 无 Docker 模式
 ```
 
-**部署模式说明：**
-- **Docker 模式**（默认）：需要安装 Docker，自动容器化部署
-- **无 Docker 模式**：仅需 Node.js 和 pnpm，构建后手动启动服务
+#### 部署模式选择
 
-详见 [完整部署指南](docs/DEPLOYMENT_GUIDE.md) 或 [快速部署指南](docs/QUICK_DEPLOY.md)
+| 模式 | 推荐场景 | 依赖 |
+|------|--------|------|
+| **Docker** | 生产环境，多服务器 | Docker, Docker Compose |
+| **PM2** | Linux/macOS 生产环境 | Node.js, PM2 |
+| **Systemd** | Linux 系统集成 | Node.js, systemd |
+| **Direct** | 开发/测试 | Node.js 仅 |
+
+#### 服务管理
+
+```bash
+# 启动/停止/重启/查看日志
+pnpm run prod:start docker
+pnpm run prod:stop docker
+pnpm run prod:restart docker
+pnpm run prod:logs docker
+
+# 健康检查和更新
+pnpm run prod:health
+pnpm run prod:upgrade docker
+pnpm run prod:backup docker
+```
+
+详见 [完整部署指南](docs/PRODUCTION_ENVIRONMENT.md) 或 [快速部署指南](docs/QUICK_DEPLOY.md)
 
 ### 游戏入门
 

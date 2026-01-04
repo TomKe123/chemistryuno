@@ -9,8 +9,8 @@ services:
     container_name: chemistry-uno-app
     restart: unless-stopped
     ports:
-      - "80:80"      # HTTP (nginx 服务前端)
-      - "5000:5000"  # WebSocket + API
+      - "4000:4000"  # 前端
+      - "5000:5000"  # 后端 WebSocket + API
     environment:
       - NODE_ENV=production
       - PORT=5000
