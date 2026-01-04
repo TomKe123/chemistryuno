@@ -2,7 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 
-const CONFIG_PATH = path.join(__dirname, '../config.json');
+// 配置文件路径：支持从环境变量指定，否则使用默认路径
+// 开发环境：server/configService.ts → ../config.json
+// 生产环境：server/dist/configService.js → ../../config.json
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(__dirname, '../../config.json');
 
 // 类型定义
 interface ElementCounts {

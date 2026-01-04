@@ -35,7 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const events_1 = require("events");
-const CONFIG_PATH = path.join(__dirname, '../config.json');
+// 配置文件路径：支持从环境变量指定，否则使用默认路径
+// 开发环境：server/configService.ts → ../config.json
+// 生产环境：server/dist/configService.js → ../../config.json
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(__dirname, '../../config.json');
 // 默认卡牌配置，作为缺失字段时的兜底
 const DEFAULT_CARD_CONFIG = {
     element_counts: {
