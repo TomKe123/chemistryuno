@@ -5,6 +5,8 @@
  */
 
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // 颜色输出
 const colors = {
@@ -68,6 +70,21 @@ async function deploy() {
     process.exit(1);
   }
   log('green', '[✓] 依赖安装完成');
+  
+  // 检查环境变量文件
+  const clientEnvFile = path.join(process.cwd(), 'client', '.env.production');
+  if (!fs.existsSync(clientEnvFile)) {
+    log('yellow', '[!] client/.env.production 不存在，正在创建...');
+    const envContent = `# 生产环境变量
+REACT_APP_ADMIN=Kc@20100205!
+PORT=4000
+BROWSER=none
+SKIP_PREFLIGHT_CHECK=true
+DISABLE_ESLINT_PLUGIN=true
+`;
+    fs.writeFileSync(clientEnvFile, envContent, 'utf-8');
+    log('green', '[✓] 已创建 client/.env.production');
+  }
   
   // 构建前端
   if (!exec('cd client && pnpm run build', '\n[→] 构建前端应用...')) {
