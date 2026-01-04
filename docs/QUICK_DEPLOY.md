@@ -1,54 +1,58 @@
 # ⚡ 化学UNO - 快速部署指南
 
-最快速、最简单的生产环境部署方法。
+最快速、最简单的生产环境部署方法（支持 Windows / Linux / macOS）。
 
 ## 🎯 一键部署（5分钟）
 
 ### 前提条件
 
-- ✅ 已有Linux服务器（Ubuntu 20.04+ 或 CentOS 7+）
-- ✅ 已安装Docker和Docker Compose
-- ✅ 服务器有公网IP
+- ✅ 已安装 Node.js >= 14.0
+- ✅ 已安装 pnpm >= 8.0
+- ✅ 已安装 Docker 和 Docker Compose
 
 ### 部署步骤
 
 ```bash
-# 1. 登录服务器
-ssh user@your-server-ip
-
-# 2. 安装Docker（如果未安装）
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-
-# 3. 安装Docker Compose（如果未安装）
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# 4. 克隆项目
-cd /var/www
-git clone <项目地址> chemistryuno
+# 1. 克隆或进入项目目录
 cd chemistryuno
 
-# 5. 配置环境变量
-cat > .env << EOF
-NODE_ENV=production
-ADMIN_PASSWORD=your-secure-password
-EOF
+# 2. 安装依赖
+pnpm install
 
-# 6. 启动服务
-docker-compose -f docker-compose.production.yml up -d
+# 3. 一键部署到生产环境
+pnpm run deploy:prod
 
-# 7. 查看运行状态
-docker-compose -f docker-compose.production.yml ps
+# 完成！服务将自动构建并启动
+```
+
+### 部署选项
+
+```bash
+# 标准部署
+pnpm run deploy:prod
+
+# 清理后重新部署
+pnpm run deploy:prod:clean
+
+# 启用 SSL 部署
+pnpm run deploy:prod:ssl
+
+# 跳过构建直接部署（适用于已构建的项目）
+pnpm run deploy:prod:skip-build
+
+# 查看帮助
+node deploy.js --help
 ```
 
 ### 访问应用
 
 ```
-前端: http://your-server-ip:3000
-后端: http://your-server-ip:5000
-管理面板: http://your-server-ip:3000/admin
+前端: http://localhost
+后端 API: http://localhost:5000
+管理面板: http://localhost/admin
 ```
+
+## 🐳 仅使用 Docker 部署
 
 ## 🔧 快速配置Nginx（可选）
 

@@ -136,7 +136,24 @@ pnpm run dev
 # 后端：http://localhost:5000
 ```
 
-### 生产环境部署
+### 生产环境部署（跨平台）
+
+```bash
+# Docker 部署（推荐 - 需要 Docker）
+pnpm run deploy:prod
+
+# 无 Docker 部署（仅需 Node.js 和 pnpm）
+pnpm run deploy:prod:no-docker
+
+# 其他部署选项
+pnpm run deploy:prod:clean      # 清理后重新部署（Docker）
+pnpm run deploy:prod:ssl        # 启用SSL部署（Docker）
+pnpm run deploy:prod:skip-build # 跳过构建直接部署
+```
+
+**部署模式说明：**
+- **Docker 模式**（默认）：需要安装 Docker，自动容器化部署
+- **无 Docker 模式**：仅需 Node.js 和 pnpm，构建后手动启动服务
 
 详见 [完整部署指南](docs/DEPLOYMENT_GUIDE.md) 或 [快速部署指南](docs/QUICK_DEPLOY.md)
 

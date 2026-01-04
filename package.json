@@ -22,10 +22,11 @@
     "docker:down": "docker-compose -f docker-compose.production.yml down",
     "docker:logs": "docker-compose -f docker-compose.production.yml logs -f",
     "docker:restart": "docker-compose -f docker-compose.production.yml restart",
-    "deploy:prod": "pwsh -File deploy-production.ps1",
-    "deploy:prod:clean": "pwsh -File deploy-production.ps1 -Clean",
-    "deploy:prod:ssl": "pwsh -File deploy-production.ps1 -WithSSL",
-    "deploy:prod:skip-build": "pwsh -File deploy-production.ps1 -SkipBuild"
+    "deploy:prod": "node deploy.js",
+    "deploy:prod:no-docker": "node deploy.js --no-docker",
+    "deploy:prod:clean": "node deploy.js --clean",
+    "deploy:prod:ssl": "node deploy.js --with-ssl",
+    "deploy:prod:skip-build": "node deploy.js --skip-build"
   },
   "keywords": [
     "chemistry",

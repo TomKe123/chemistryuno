@@ -1,6 +1,6 @@
-# Chemistry UNO - 生产环境一键部署指南
+# Chemistry UNO - 跨平台生产环境部署指南
 
-本指南介绍如何使用一键部署脚本快速将 Chemistry UNO 部署到生产环境。
+本指南介绍如何使用跨平台部署脚本快速将 Chemistry UNO 部署到生产环境（支持 Windows / Linux / macOS）。
 
 ## 📋 目录
 
@@ -14,12 +14,19 @@
 
 ## 🎯 前置要求
 
-在开始部署之前，请确保已安装以下工具：
+根据部署模式选择所需工具：
 
+### Docker 模式（默认）
 - **Node.js** >= 14.0.0
 - **pnpm** >= 8.0.0
 - **Docker** >= 20.0.0
 - **Docker Compose** >= 2.0.0
+
+### 无 Docker 模式
+- **Node.js** >= 14.0.0
+- **pnpm** >= 8.0.0
+
+> 💡 **提示**：如果你没有安装 Docker，可以使用 `--no-docker` 选项进行部署。
 
 ### 检查安装
 
@@ -32,73 +39,97 @@ docker-compose --version
 
 ## 🚀 快速开始
 
-### Windows 用户
+### 跨平台部署（推荐）
 
-```powershell
-# 标准部署
-.\deploy-production.ps1
+新的部署方案使用纯 Node.js 脚本，支持所有平台：
 
-# 或使用 pnpm 命令
+```bash
+# Docker 部署（默认 - 需要 Docker）
+pnpm run deploy:prod
+
+# 无 Docker 部署（仅需 Node.js 和 pnpm）
+pnpm run deploy:prod:no-docker
+
+# 或直接运行脚本
+node deploy.js              # Docker 模式
+node deploy.js --no-docker  # 无 Docker 模式
+```
+
+## 🎭 部署模式详解
+
+### Docker 模式（默认）
+
+**优点：**
+- ✅ 环境隔离，不影响主机
+- ✅ 一键启动所有服务
+- ✅ 易于管理和维护
+- ✅ 支持 SSL/HTTPS
+
+**使用场景：**
+- 生产环境部署
+- 需要容器化管理
+- 服务器已安装 Docker
+
+```bash
 pnpm run deploy:prod
 ```
 
-### Linux/Mac 用户
+### 无 Docker 模式
+
+**优点：**
+- ✅ 无需安装 Docker
+- ✅ 资源占用更少
+- ✅ 适合轻量级部署
+
+**使用场景：**
+- 开发/测试环境
+- 无法安装 Docker 的环境
+- 需要直接访问进程
 
 ```bash
-# 赋予执行权限（首次运行）
-chmod +x deploy-production.sh
+pnpm run deploy:prod:no-docker
+```
+
+**启动服务（无 Docker 模式）：**
+```bash
+# 后端
+cd server && node dist/index.js
+
+# 前端（静态文件服务）
+npx serve -s client/build -l 3000
+
+# 或使用开发模式
+pnpm start
+```
 
 # 标准部署
 ./deploy-production.sh
 
-# 或使用 pnpm 命令
-pnpm run deploy:prod
-```
-
 ## ⚙️ 部署选项
 
-### Windows (PowerShell)
-
-```powershell
-# 查看所有选项
-.\deploy-production.ps1 -Help
-
-# 清理后重新部署
-.\deploy-production.ps1 -Clean
-
-# 启用 HTTPS/SSL 支持
-.\deploy-production.ps1 -WithSSL
-
-# 跳过构建步骤（使用现有构建）
-.\deploy-production.ps1 -SkipBuild
-
-# 跳过测试步骤
-.\deploy-production.ps1 -SkipTests
-
-# 组合多个选项
-.\deploy-production.ps1 -Clean -WithSSL
-```
-
-### Linux/Mac (Bash)
+部署脚本支持以下选项：
 
 ```bash
 # 查看所有选项
-./deploy-production.sh --help
+node deploy.js --help
 
-# 清理后重新部署
-./deploy-production.sh --clean
+# 无 Docker 部署
+node deploy.js --no-docker
 
-# 启用 HTTPS/SSL 支持
-./deploy-production.sh --with-ssl
+# 清理后重新部署（Docker 模式）
+node deploy.js --clean
+
+# 启用 HTTPS/SSL 支持（Docker 模式）
+node deploy.js --with-ssl
 
 # 跳过构建步骤（使用现有构建）
-./deploy-production.sh --skip-build
+node deploy.js --skip-build
 
 # 跳过测试步骤
-./deploy-production.sh --skip-tests
+node deploy.js --skip-tests
 
 # 组合多个选项
-./deploy-production.sh --clean --with-ssl
+node deploy.js --no-docker --skip-tests
 ```
 
 ## 📦 使用 pnpm 命令
@@ -106,51 +137,61 @@ pnpm run deploy:prod
 为了方便使用，我们在 `package.json` 中预定义了以下快捷命令：
 
 ```bash
-# 标准生产部署
+# Docker 部署
 pnpm run deploy:prod
 
-# 清理后重新部署
+# 无 Docker 部署
+pnpm run deploy:prod:no-docker
+
+# 清理后重新部署（Docker）
 pnpm run deploy:prod:clean
 
-# 启用 SSL 的部署
+# 启用 SSL 的部署（Docker）
 pnpm run deploy:prod:ssl
 
-# 跳过构建直接部署（快速部署）
+# 跳过构建直接部署
 pnpm run deploy:prod:skip-build
 ```
 
 ## 🎬 常见场景
 
-### 场景 1: 首次部署
+### 场景 1: 首次部署（有 Docker）
 
 ```bash
-# 完整的初始部署
+# 完整的初始部署（所有平台通用）
 pnpm run deploy:prod
-
-# 或者
-.\deploy-production.ps1          # Windows
-./deploy-production.sh           # Linux/Mac
 ```
 
-### 场景 2: 代码更新后重新部署
+### 场景 2: 首次部署（无 Docker）
 
 ```bash
-# 标准重新部署（推荐）
-pnpm run deploy:prod
+# 构建应用
+pnpm run deploy:prod:no-docker
 
-# 或快速部署（如果已经手动构建过）
-pnpm run deploy:prod:skip-build
+# 然后手动启动服务
+cd server && node dist/index.js
+# 另一个终端
+npx serve -s client/build -l 3000
 ```
 
-### 场景 3: 完全清理后重新部署
+### 场景 3: 代码更新后重新部署
+
+```bash
+# Docker 模式 - 标准重新部署（推荐）
+pnpm run deploy:prod
+
+# 无 Docker 模式 - 重新构建
+pnpm run deploy:prod:no-docker
+```
+
+### 场景 4: 完全清理后重新部署（Docker）
 
 ```bash
 # 删除所有容器和镜像后重新部署
 pnpm run deploy:prod:clean
 
-# 或者
-.\deploy-production.ps1 -Clean   # Windows
-./deploy-production.sh --clean   # Linux/Mac
+# 或直接运行脚本
+node deploy.js --clean
 ```
 
 ### 场景 4: 启用 HTTPS 的生产环境
