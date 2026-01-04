@@ -133,8 +133,8 @@ async function deploy() {
       log('cyan', '\n请手动启动服务：');
       log('cyan', '  pnpm run serve');
     }
-  });
-}
+  };
+
 
 deploy().catch(err => {
   log('red', `[✗] 部署失败: ${err.message}`);
