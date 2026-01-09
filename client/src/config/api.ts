@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
   // 初始化设置
   checkSetup: `${API_BASE_URL}/api/setup/check`,
   setup: `${API_BASE_URL}/api/setup`,
+  verifyPassword: `${API_BASE_URL}/api/verify-password`,
   
   // 化合物相关
   compounds: `${API_BASE_URL}/api/compounds`,

@@ -22,8 +22,9 @@ const App: React.FC = () => {
   const [checkingSetup, setCheckingSetup] = useState(true);
   const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
   const isSetupRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/setup');
-  // 优先使用环境变量，如果没有则从localStorage读取（通过/setup设置的密码）
-  const adminPassword = process.env.REACT_APP_ADMIN || localStorage.getItem('adminPassword') || '';
+  // 已弃用前端环境变量直接读取密码，改用后端验证
+  // const adminPassword = process.env.REACT_APP_ADMIN || ...
+  
   const [adminAuthed, setAdminAuthed] = useState(() => {
     // 使用localStorage以持久保存登录状态
     return localStorage.getItem('adminAuthed') === 'true';
@@ -91,7 +92,6 @@ const App: React.FC = () => {
       <AdminPanel />
     ) : (
       <AdminLogin
-        expectedPassword={adminPassword}
         onSuccess={() => setAdminAuthed(true)}
       />
     );

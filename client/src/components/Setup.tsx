@@ -46,12 +46,13 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
       });
 
       if (response.data && response.data.success) {
-        // 将密码保存到 localStorage（前端使用）
-        localStorage.setItem('adminPassword', adminPassword);
+        // 重构：只在localStorage保存登录状态，不保存密码明文
+        // 密码安全由服务器端验证保障
+        localStorage.removeItem('adminPassword'); // 清理旧逻辑残留
         setStep(2);
         // 提示用户需要重启服务
         setTimeout(() => {
-          alert('设置已保存！\n\n请重启服务以使密码生效：\n1. 停止当前服务（Ctrl+C）\n2. 重新运行: node start.js 或 pnpm run deploy');
+          alert('设置已保存！\n\n请重启服务以使密码生效：\n1. 停止当前服务（Ctrl+C）\n2. 运行: ./start-integrated.sh (Linux) 或 start-integrated.bat (Windows)');
           window.location.href = '/';
         }, 2000);
       } else {

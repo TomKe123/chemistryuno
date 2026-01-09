@@ -14,6 +14,14 @@ import configService = require('./configService');
 const app = express();
 const server = http.createServer(app);
 
+// 辅助函数：确定项目根目录 (提升到顶部以供全局使用)
+const getRootDir = () => {
+  const isDist = __dirname.endsWith('dist') || __dirname.includes(path.join('server', 'dist'));
+  // 如果在 server/dist 下 -> 回退两级到 chemistryuno/
+  // 如果在 server 下 (dev) -> 回退一级到 chemistryuno/
+  return isDist ? path.join(__dirname, '..', '..') : path.join(__dirname, '..');
+};
+
 // 配置CORS - 支持移动设备访问
 const allowedOrigins: (string | RegExp)[] = [
   'http://localhost:3000',
@@ -550,11 +558,13 @@ app.get('/api/config', (req: Request, res: Response) => {
 // 检查是否已完成初始化设置
 app.get('/api/setup/check', (req: Request, res: Response) => {
   try {
+    const rootDir = getRootDir();
     // 检查多个可能的.env文件位置
     const envPaths = [
-      path.join(__dirname, '..', '.env'),
-      path.join(__dirname, '..', 'client', '.env.production'),
-      path.join(process.cwd(), '.env')
+      path.join(rootDir, '.env'),
+      path.join(rootDir, 'client', '.env.production'),
+      path.join(process.cwd(), '.env'),
+      path.join(__dirname, '..', '.env') // Fallback for dev
     ];
     
     let adminPassword = '';
@@ -583,6 +593,22 @@ app.get('/api/setup/check', (req: Request, res: Response) => {
   }
 });
 
+// 验证管理密码 (新增) - 解决前端无法获取构建时环境变量的问题
+app.post('/api/verify-password', (req: Request, res: Response) => {
+  const { password } = req.body;
+  const adminPassword = process.env.REACT_APP_ADMIN;
+  
+  if (!adminPassword) {
+    return res.status(400).json({ success: false, message: '服务器未配置管理密码' });
+  }
+  
+  if (password === adminPassword) {
+    res.json({ success: true });
+  } else {
+    res.json({ success: false, message: '密码错误' });
+  }
+});
+
 // 初始化设置 - 保存管理员密码
 app.post('/api/setup', (req: Request, res: Response) => {
   const { adminPassword } = req.body;
@@ -592,13 +618,7 @@ app.post('/api/setup', (req: Request, res: Response) => {
   }
 
   try {
-    // 智能计算项目根目录
-    // 如果在 dist 目录运行 (生产环境)，根目录是 ../..
-    // 如果在 server 目录运行 (开发环境)，根目录是 ..
-    const isDist = __dirname.endsWith('dist') || __dirname.includes(path.join('server', 'dist'));
-    const rootDir = isDist 
-      ? path.join(__dirname, '..', '..') 
-      : path.join(__dirname, '..');
+    const rootDir = getRootDir();
 
     console.log(`[Setup] 当前目录: ${__dirname}`);
     console.log(`[Setup] 项目根目录: ${rootDir}`);
@@ -606,6 +626,7 @@ app.post('/api/setup', (req: Request, res: Response) => {
     // 定义需要更新的.env文件路径
     const envFiles = [
       { path: path.join(rootDir, '.env'), name: '根目录.env' },
+      // 同时更新client env，虽然在集成模式下主要靠后端验证，但保持一致性是好的
       { path: path.join(rootDir, 'client', '.env.production'), name: 'client/.env.production' }
     ];
 
@@ -1282,12 +1303,6 @@ function sanitizeGameState(gameState: GameState, playerId: number | null) {
   
   return sanitized;
 }
-
-// 辅助函数：确定项目根目录
-const getRootDir = () => {
-  const isDist = __dirname.endsWith('dist') || __dirname.includes(path.join('server', 'dist'));
-  return isDist ? path.join(__dirname, '..', '..') : path.join(__dirname, '..');
-};
 
 // 静态文件托管 (集成部署模式)
 // 必须放在 API 路由之后，404 处理之前
