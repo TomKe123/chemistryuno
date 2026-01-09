@@ -4,14 +4,66 @@
 
 因此，您**必须**配置 Nginx 反向代理，使前端和后端使用同一个域名和 HTTPS 协议。
 
-## 场景描述
+## 终极简化方案：单端口集成模式 (推荐)
 
-- **前端域名**: `https://cu.tomsite.us.kg`
-- **前端服务**: 运行在 `localhost:4000`
-- **后端服务**: 运行在 `localhost:4001`
-- **问题**: 访问前端正常，但 API 请求 (`http://cu.tomsite.us.kg:4001`) 被浏览器拦截
+我们已在后端代码中添加了静态文件托管功能。这意味着您不再需要分别代理前端 (4000) 和后端 (4001)，也不需要运行两个服务。
 
-## 解决方案
+只需要把所有流量转发到后端端口 **4001** 即可。
+
+### 1. 启动方式变更
+
+请确保运行了构建命令：
+```bash
+pnpm run build
+```
+
+然后只需要启动后端服务即可（它会自动托管前端）：
+```bash
+cd server
+node dist/index.js
+# 或者使用 PM2
+pm2 start dist/index.js --name "chemistry-uno"
+```
+
+**(不再需要运行 `npx serve` 或启动 client)**
+
+### 2. Nginx 配置 (超简单)
+
+将 Nginx 配置简化为只代理到 4001：
+
+```nginx
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name cu.tomsite.us.kg; 
+    
+    # SSL 配置...
+    
+    # 将所有请求统一转发到 4001
+    location / {
+        proxy_pass http://127.0.0.1:4001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+这样就彻底解决了：
+1. Mixed Content 问题 (同源)
+2. CORS 问题 (同源)
+3. 繁琐的配置问题
+4. 404 路由问题 (后端已配置 SPA 回退)
+
+---
+
+## (旧方案) 双端口反向代理配置
+
+如果您坚持要分开运行前端和后端，请参考以下配置：
+
+### 1. 宝塔面板配置步骤
 
 我们将前端代码修改为使用相对路径（`/api/...`），然后通过 Nginx 将这些请求转发到后端。
 

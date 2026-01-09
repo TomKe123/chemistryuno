@@ -1283,6 +1283,36 @@ function sanitizeGameState(gameState: GameState, playerId: number | null) {
   return sanitized;
 }
 
+// 辅助函数：确定项目根目录
+const getRootDir = () => {
+  const isDist = __dirname.endsWith('dist') || __dirname.includes(path.join('server', 'dist'));
+  return isDist ? path.join(__dirname, '..', '..') : path.join(__dirname, '..');
+};
+
+// 静态文件托管 (集成部署模式)
+// 必须放在 API 路由之后，404 处理之前
+const rootDir = getRootDir();
+const clientBuildPath = path.join(rootDir, 'client', 'build');
+
+if (fs.existsSync(clientBuildPath)) {
+  console.log(`[Server]启用静态文件托管: ${clientBuildPath}`);
+  
+  // 托管静态资源
+  app.use(express.static(clientBuildPath));
+  
+  // 所有非 API 请求返回 index.html (SPA 支持)
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
+    // 如果是 API 请求但未匹配到上面的路由，交由 404 处理
+    if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+} else {
+  console.log(`[Server] 未找到前端构建文件: ${clientBuildPath}`);
+  console.log(`[Server] 以纯 API 模式运行`);
+}
+
 // 404 处理
 app.use((req: Request, res: Response) => {
   res.status(404).json({
