@@ -40,9 +40,9 @@ fi
 
 echo -e "${GREEN}[✓] 正在启动开发服务器...${NC}"
 echo ""
-echo -e "${CYAN}  前端: http://localhost:3000${NC}"
-echo -e "${CYAN}  后端: http://localhost:5000${NC}"
-echo -e "${CYAN}  管理面板: http://localhost:3000/admin${NC}"
+echo -e "${CYAN}  前端: http://localhost:4000${NC}"
+echo -e "${CYAN}  后端: http://localhost:4001${NC}"
+echo -e "${CYAN}  管理面板: http://localhost:4000/admin${NC}"
 echo ""
 echo -e "${CYAN}按 Ctrl+C 停止服务${NC}"
 echo ""

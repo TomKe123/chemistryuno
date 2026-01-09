@@ -67,6 +67,7 @@ pnpm run deploy
 - [管理面板指南](docs/ADMIN_PANEL_GUIDE.md) - 如何管理游戏规则
 - [移动端访问指南](docs/MOBILE_ACCESS_GUIDE.md) - 在手机上玩游戏
 - [跨平台支持说明](docs/PLATFORM_SUPPORT.md) - Windows/Linux/Mac 使用指南
+- **[Ubuntu 22 修复指南](docs/UBUNTU_FIX.md)** - 🔧 解决 Linux 部署问题
 
 ### 技术文档
 
@@ -74,6 +75,30 @@ pnpm run deploy
 - [安全配置指南](docs/SECURITY.md) - 密码和敏感信息管理 🔒
 - [项目优化总结](docs/CLEANUP_SUMMARY.md) - 代码清理和优化记录
 - [部署测试报告](docs/DEPLOY_TEST_REPORT.md) - 部署测试详情
+
+## ⚠️ Ubuntu/Linux 用户注意
+
+如果在 Ubuntu 22 或其他 Linux 发行版上遇到以下问题：
+- ❌ 无法跳转到 /setup 页面
+- ❌ 无法连接后端服务器
+- ❌ 创建房间提示 network error
+
+请运行快速修复脚本：
+```bash
+# 1. 应用修复
+chmod +x apply-fix.sh
+./apply-fix.sh
+
+# 2. 验证修复
+chmod +x verify-fix.sh
+./verify-fix.sh
+
+# 3. 重新构建和部署
+pnpm run build
+pnpm run deploy
+```
+
+详细说明请查看：**[Ubuntu 22 修复指南](docs/UBUNTU_FIX.md)**
 
 ## 🎮 游戏规则
 
