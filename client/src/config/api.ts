@@ -5,6 +5,14 @@ const getApiBaseUrl = (): string => {
     return process.env.REACT_APP_API_URL;
   }
   
+  // 关键修复：如果是 HTTPS 环境，且没有指定 API URL，默认使用空字符串
+  // 这意味着所有 API 请求将使用相对路径 (例如 /api/...)
+  // 这样可以避免 Mixed Content 错误 (HTTPS 页面请求 HTTP 资源)
+  // 注意：这要求服务器配置了反向代理 (Nginx/Apache) 将 /api 转发到后端端口
+  if (window.location.protocol === 'https:') {
+    return '';
+  }
+
   // 在生产环境或移动设备访问时，使用当前主机
   // 如果前端和后端在同一台服务器上，使用相对路径
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

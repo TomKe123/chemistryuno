@@ -162,6 +162,21 @@ chmod +x start.sh
 chmod +x deploy.sh
 ```
 
+### 问题4: Mixed Content / Network Error (HTTPS 环境)
+**症状：**
+- 控制台显示 "Mixed Content... was loaded over HTTPS, but requested an insecure XMLHttpRequest..."
+- 无法连接后端或 WebSocket
+
+**解决方案：**
+如果您的网站使用了 HTTPS，必须配置 Nginx 反向代理将 `/api` 和 `/socket.io` 转发到后端端口 (4001)。
+
+1. 查看详细配置指南：**[docs/HTTPS_NGINX_GUIDE.md](HTTPS_NGINX_GUIDE.md)**
+2. 修改 Nginx 配置后，重新构建并部署前端：
+```bash
+pnpm run build
+pnpm run deploy
+```
+
 ### 问题5: CORS 错误
 后端已配置支持所有来源，如仍有问题：
 1. 确认后端正在运行
