@@ -1293,7 +1293,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-const PORT = process.env.PORT || 4001;
+const PORT = Number(process.env.PORT) || 4001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {

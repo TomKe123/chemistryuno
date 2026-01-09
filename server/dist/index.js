@@ -1109,8 +1109,28 @@ app.use((err, req, res, next) => {
         error: 'Internal Server Error'
     });
 });
-const PORT = process.env.PORT || 4001;
-server.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 4001;
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => {
     console.log(`✓ 服务器运行在 http://localhost:${PORT}`);
+    console.log(`✓ 服务器监听在 ${HOST}:${PORT}`);
     console.log(`✓ WebSocket 服务已启动，等待连接...`);
+    // 显示局域网访问地址
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    const addresses = [];
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            // 跳过内部和非ipv4地址
+            if (iface.family === 'IPv4' && !iface.internal) {
+                addresses.push(iface.address);
+            }
+        }
+    }
+    if (addresses.length > 0) {
+        console.log(`✓ 局域网访问地址:`);
+        addresses.forEach(addr => {
+            console.log(`  - http://${addr}:${PORT}`);
+        });
+    }
 });
