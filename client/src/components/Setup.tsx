@@ -45,7 +45,7 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
         adminPassword: adminPassword
       });
 
-      if (response.data.success) {
+      if (response.data && response.data.success) {
         // 将密码保存到 localStorage（前端使用）
         localStorage.setItem('adminPassword', adminPassword);
         setStep(2);
@@ -54,6 +54,17 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
           alert('设置已保存！\n\n请重启服务以使密码生效：\n1. 停止当前服务（Ctrl+C）\n2. 重新运行: node start.js 或 pnpm run deploy');
           window.location.href = '/';
         }, 2000);
+      } else {
+        // 如果返回了 200 但不是预期的 JSON 格式（例如返回了 index.html），说明 API 请求没有正确到达后端
+        console.error('Unexpected response:', response);
+        const isHtml = typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>');
+        
+        if (isHtml) {
+          setError('配置错误：API 请求被拦截。请确保 Nginx 已配置及 /api 反向代理规则生效。');
+        } else {
+          setError('服务器响应异常，请检查后端日志');
+        }
+        setLoading(false);
       }
     } catch (err: any) {
       console.error('Setup error:', err);
