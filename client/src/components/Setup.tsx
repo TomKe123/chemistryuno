@@ -55,8 +55,10 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
           window.location.href = '/';
         }, 2000);
       }
-    } catch (err) {
-      setError((err as any).response?.data?.error || '保存失败，请重试');
+    } catch (err: any) {
+      console.error('Setup error:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || err.message || '保存失败，请检查网络或服务器日志';
+      setError(`保存失败: ${errorMessage}`);
       setLoading(false);
     }
   };

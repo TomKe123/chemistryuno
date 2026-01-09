@@ -592,11 +592,23 @@ app.post('/api/setup', (req: Request, res: Response) => {
   }
 
   try {
+    // 智能计算项目根目录
+    // 如果在 dist 目录运行 (生产环境)，根目录是 ../..
+    // 如果在 server 目录运行 (开发环境)，根目录是 ..
+    const isDist = __dirname.endsWith('dist') || __dirname.includes(path.join('server', 'dist'));
+    const rootDir = isDist 
+      ? path.join(__dirname, '..', '..') 
+      : path.join(__dirname, '..');
+
+    console.log(`[Setup] 当前目录: ${__dirname}`);
+    console.log(`[Setup] 项目根目录: ${rootDir}`);
+
     // 定义需要更新的.env文件路径
     const envFiles = [
-      { path: path.join(__dirname, '..', '.env'), name: '根目录.env' },
-      { path: path.join(__dirname, '..', 'client', '.env.production'), name: 'client/.env.production' }
+      { path: path.join(rootDir, '.env'), name: '根目录.env' },
+      { path: path.join(rootDir, 'client', '.env.production'), name: 'client/.env.production' }
     ];
+
     
     const defaultEnvContent = `# 化学UNO - 环境变量配置
 NODE_ENV=production
@@ -657,7 +669,12 @@ DISABLE_ESLINT_PLUGIN=true
       message: '设置已保存，请重启服务以生效' 
     });
   } catch (error: any) {
-    res.status(500).json({ error: '保存失败，请重试' });
+    console.error('[Setup] 保存失败:', error);
+    res.status(500).json({ 
+      error: '保存配置失败', 
+      details: error.message,
+      path: __dirname
+    });
   }
 });
 
