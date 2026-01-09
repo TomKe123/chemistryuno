@@ -79,8 +79,8 @@ pnpm start
 
 # 生产模式 - 先构建
 pnpm run build
-# 然后使用 serve 启动（注意使用 serve.json 配置）
-npx serve -s build -l 4000 --config build/serve.json
+# 然后使用 serve 启动 (serve 会自动加载 build/serve.json)
+npx serve -s build -l 4000
 ```
 
 ## 关键配置说明

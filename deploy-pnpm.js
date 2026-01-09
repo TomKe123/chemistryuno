@@ -120,7 +120,8 @@ DISABLE_ESLINT_PLUGIN=true
 
   // 等待后端启动后启动前端
   setTimeout(() => {
-    const serveArgs = ['serve', '-s', 'build', '-l', '4000', '--config', 'build/serve.json'];
+    // 自动查找 build/serve.json，不需要显式指定
+    const serveArgs = ['serve', '-s', 'build', '-l', '4000'];
     const frontendProcess = spawn(isWindows ? 'npx.cmd' : 'npx', serveArgs, {
       cwd: path.join(process.cwd(), 'client'),
       stdio: 'inherit',
